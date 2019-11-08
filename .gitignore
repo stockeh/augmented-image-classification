@@ -1,0 +1,9 @@
+# Datasets
+mnist.pkl.gz*
+
+# Mac Defaults
+.DS_Store
+
+# Jupyter Defaults
+.ipynb_checkpoints
+__pycache__
