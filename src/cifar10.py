@@ -41,7 +41,7 @@ import matplotlib.pyplot as plt
 
 # Directory where you want to download and save the data-set.
 # Set this before you start calling any of the functions below.
-data_path = "data/CIFAR-10/"
+data_path = ""
 
 # URL for the data-set on the internet.
 data_url = "https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz"
