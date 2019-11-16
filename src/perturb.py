@@ -37,6 +37,12 @@ def change_pixel(Xset, pixels_to_change=1, pertrub='stuck'):
 
     return Xcopy
 
+def add_image_noise(Xset, variance=0.01):
+    Xcopy = copy.copy(Xset)
+    noise = np.random.normal(0, variance, Xcopy.shape)
+    Xcopy += noise
+    return Xcopy
+
 def imshow(nnet, Xset, Xcopy, Tset, same_index, model, name='grid.pdf'):
     plt.figure(figsize=(9, 4))
 
