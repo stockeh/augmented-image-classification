@@ -13,6 +13,8 @@ from ipywidgets import FloatProgress
 #  imshow
 #  classified_diff
 #  change_in_pixels_plot
+#  add_image_noise
+#  test_increasing_noise
 ######################################################################
 
 def change_pixel(Xset, pixels_to_change=1, pertrub='stuck'):
@@ -41,7 +43,7 @@ def add_image_noise(Xset, variance=0.01):
     Xcopy = copy.copy(Xset)
     noise = np.random.normal(0, variance, Xcopy.shape)
     Xcopy += noise
-    return Xcopy
+    return np.clip(Xcopy, 0, 1)
 
 def imshow(nnet, Xset, Xcopy, Tset, same_index, model, name='grid.pdf'):
     plt.figure(figsize=(9, 4))
@@ -116,3 +118,26 @@ def change_in_pixels_plot(nnet, Xset, Tset, end_pixel_val=10, trials_per_pixel=5
     plt.grid(True); plt.tight_layout();
     plt.savefig(name, bbox_inches='tight')
     plt.show();
+
+def test_increasing_noise(nnet, Xset, Tset, var_range=(0.001, 0.05), num_steps=5, trials_per_step=5):
+    change = []
+
+    f = FloatProgress(min=0, max=(num_steps * trials_per_step))
+    display(f)
+
+    for var_step in np.linspace(var_range[0], var_range[1], num_steps):
+        percent_diff_arr = []
+        for trial in range(trials_per_step):
+            Xcopy = add_image_noise(Xset, var_step)
+            percent_diff_arr.append(classified_diff(nnet, Xset, Xcopy, Tset)[1])
+
+            f.value += 1
+
+        change.append(percent_diff_arr)
+
+    change = np.array(change)
+
+    x = np.linspace(var_range[0], var_range[1], num_steps)
+    y = np.mean(change, axis=1)
+    yerr = np.std(change, axis=1)
+    return (x, y, yerr)
