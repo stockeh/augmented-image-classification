@@ -8,6 +8,7 @@ class NeuralNetwork_Convolutional():
 
     def __init__(self, n_channels_in_image, image_size,
                  n_units_in_conv_layers, kernels_size_and_stride,
+                 max_pooling_kernels_and_stride,
                  n_units_in_fc_hidden_layers,
                  classes, use_gpu=False):
 
@@ -26,6 +27,7 @@ class NeuralNetwork_Convolutional():
         self.n_units_in_conv_layers = n_units_in_conv_layers
         self.n_units_in_fc_hidden_layers = n_units_in_fc_hidden_layers
         self.kernels_size_and_stride = kernels_size_and_stride
+        self.max_pooling_kernels_and_stride = max_pooling_kernels_and_stride
         self.n_outputs = len(classes)
         self.classes = np.array(classes)
         self.use_gpu = use_gpu
@@ -43,9 +45,13 @@ class NeuralNetwork_Convolutional():
         n_layers = 0
         if self.n_conv_layers > 0:
 
-            for (n_units, kernel) in zip(self.n_units_in_conv_layers, self.kernels_size_and_stride):
+            for (n_units, kernel, pool) in zip(self.n_units_in_conv_layers, self.kernels_size_and_stride,
+                                               self.max_pooling_kernels_and_stride):
                 n_units_previous, output_size_previous = self._add_conv2d_tanh(n_layers,
                                         n_units_previous, output_size_previous, n_units, kernel)
+                if pool:
+                    output_size_previous = self._add_maxpool2d(n_layers, output_size_previous, pool)
+
                 n_layers += 1 # for text label in layer
 
         self.nnet.add_module('flatten', torch.nn.Flatten())  # prepare for fc layers
@@ -78,6 +84,12 @@ class NeuralNetwork_Convolutional():
         n_units_previous = n_units
         return n_units_previous, output_size_previous
 
+    def _add_maxpool2d(self, n_layers, output_size_previous, pool):
+        kernel_size, kernel_stride = pool
+        self.nnet.add_module(f'pool_{n_layers}', torch.nn.MaxPool2d(kernel_size, kernel_stride))
+        output_size_previous = (output_size_previous - kernel_size) // kernel_stride + 1
+        return output_size_previous
+
     def _add_fc_tanh(self, n_layers, n_inputs, n_units):
         self.nnet.add_module(f'linear_{n_layers}', torch.nn.Linear(n_inputs, n_units))
         self.nnet.add_module(f'output_{n_layers}', torch.nn.Tanh())
@@ -90,6 +102,7 @@ class NeuralNetwork_Convolutional():
                             image_size={self.image_size},
                             n_units_in_conv_layers={self.n_units_in_conv_layers},
                             kernels_size_and_stride={self.kernels_size_and_stride},
+                            max_pooling_kernels_and_stride={self.max_pooling_kernels_and_stride},
                             n_units_in_fc_hidden_layers={self.n_units_in_fc_hidden_layers},
                             classes={self.classes},
                             use_gpu={self.use_gpu})'''
