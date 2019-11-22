@@ -109,7 +109,7 @@ class NeuralNetwork_Convolutional():
 
         s += '\n' + str(self.nnet)
         if self.n_epochs > 0:
-            s += f'\n   Network was trained for {self.n_epochs} epochs that took {self.training_time:.4f} seconds.'
+            s += f'\n   Network was trained for {self.n_epochs} epochs with a batch size of {self.batch_size} and took {self.training_time:.4f} seconds.'
             s += f'\n   Final objective value is {self.error_trace[-1]:.3f}'
         else:
             s += '  Network is not trained.'
@@ -131,11 +131,12 @@ class NeuralNetwork_Convolutional():
             self.XstdsFixed = copy.copy(self.Xstds)
             self.XstdsFixed[self.Xconstant] = 1
 
-    def train(self, X, T, n_epochs, optim='Adam', learning_rate=0.01, verbose=False):
+    def train(self, X, T, n_epochs, batch_size, optim='Adam', learning_rate=0.01, verbose=False):
 
         start_time = time.time()
 
         self.n_epochs = n_epochs
+        self.batch_size = batch_size
         self.learning_rate = learning_rate
 
         if T.ndim == 1:
@@ -163,26 +164,50 @@ class NeuralNetwork_Convolutional():
         else:
             raise Exception('Only \'Adam\' and \'SGD\' are supported optimizers.')
 
+        n_examples = X.shape[0]
+        num_batches = n_examples // batch_size
+
         print_every = n_epochs // 10 if n_epochs > 9 else 1
         for epoch in range(n_epochs):
+            for k in range(num_batches):
+                start, end = k * batch_size, (k + 1) * batch_size
 
-            optimizer.zero_grad()
+                Xbatch = X[start:end, ...]
+                Tbatch = T[start:end, ...]
 
-            Y = self.nnet(X)
-            error = loss(Y, T)
-            self.error_trace.append(error)
+                optimizer.zero_grad()
 
-            error.backward()
+                Y = self.nnet(Xbatch)
+                error = loss(Y, Tbatch)
+                self.error_trace.append(error)
 
-            optimizer.step()
+                error.backward()
+
+                optimizer.step()
 
             if verbose and (epoch + 1) % print_every == 0:
                 print(f'Epoch {epoch + 1} error {error:.5f}')
+
+        if self.use_gpu:
+            X = X.cpu()
+            T = T.cpu()
 
         self.training_time = time.time() - start_time
 
     def get_error_trace(self):
         return self.error_trace
+
+    def cpu(self):
+        if self.use_gpu:
+            self.nnet.cpu()
+            self.use_gpu = False
+
+    def cuda(self):
+        if not torch.cuda.is_available():
+            self.nnet.cuda()
+            self.use_gpu = True
+        else:
+            print('\nGPU is not available. Running on CPU.\n')
 
     def _softmax(self, Y):
         mx = Y.max()
@@ -200,7 +225,9 @@ class NeuralNetwork_Convolutional():
         Y = self.nnet(X)
 
         if self.use_gpu:
+            X = X.cpu()
             Y = Y.cpu()
+
         Y = Y.detach().numpy()
         Yclasses = self.classes[Y.argmax(axis=1)].reshape((-1, 1))
 

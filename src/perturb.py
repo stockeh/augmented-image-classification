@@ -58,7 +58,7 @@ def imshow(nnet, Xset, Xcopy, Tset, same_index, model,
         cols = 7
 
     else:
-        plt.figure(figsize=(5, 3))
+        plt.figure(figsize=(5, 4))
         num  = 8
         rows = 2
         cols = 4
