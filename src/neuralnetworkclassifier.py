@@ -8,6 +8,7 @@ class NeuralNetwork_Convolutional():
 
     def __init__(self, n_channels_in_image, image_size,
                  n_units_in_conv_layers, kernels_size_and_stride,
+                 max_pooling_kernels_and_stride,
                  n_units_in_fc_hidden_layers,
                  classes, use_gpu=False):
 
@@ -26,6 +27,7 @@ class NeuralNetwork_Convolutional():
         self.n_units_in_conv_layers = n_units_in_conv_layers
         self.n_units_in_fc_hidden_layers = n_units_in_fc_hidden_layers
         self.kernels_size_and_stride = kernels_size_and_stride
+        self.max_pooling_kernels_and_stride = max_pooling_kernels_and_stride
         self.n_outputs = len(classes)
         self.classes = np.array(classes)
         self.use_gpu = use_gpu
@@ -43,9 +45,13 @@ class NeuralNetwork_Convolutional():
         n_layers = 0
         if self.n_conv_layers > 0:
 
-            for (n_units, kernel) in zip(self.n_units_in_conv_layers, self.kernels_size_and_stride):
+            for (n_units, kernel, pool) in zip(self.n_units_in_conv_layers, self.kernels_size_and_stride,
+                                               self.max_pooling_kernels_and_stride):
                 n_units_previous, output_size_previous = self._add_conv2d_tanh(n_layers,
                                         n_units_previous, output_size_previous, n_units, kernel)
+                if pool:
+                    output_size_previous = self._add_maxpool2d(n_layers, output_size_previous, pool)
+
                 n_layers += 1 # for text label in layer
 
         self.nnet.add_module('flatten', torch.nn.Flatten())  # prepare for fc layers
@@ -78,6 +84,12 @@ class NeuralNetwork_Convolutional():
         n_units_previous = n_units
         return n_units_previous, output_size_previous
 
+    def _add_maxpool2d(self, n_layers, output_size_previous, pool):
+        kernel_size, kernel_stride = pool
+        self.nnet.add_module(f'pool_{n_layers}', torch.nn.MaxPool2d(kernel_size, kernel_stride))
+        output_size_previous = (output_size_previous - kernel_size) // kernel_stride + 1
+        return output_size_previous
+
     def _add_fc_tanh(self, n_layers, n_inputs, n_units):
         self.nnet.add_module(f'linear_{n_layers}', torch.nn.Linear(n_inputs, n_units))
         self.nnet.add_module(f'output_{n_layers}', torch.nn.Tanh())
@@ -90,13 +102,14 @@ class NeuralNetwork_Convolutional():
                             image_size={self.image_size},
                             n_units_in_conv_layers={self.n_units_in_conv_layers},
                             kernels_size_and_stride={self.kernels_size_and_stride},
+                            max_pooling_kernels_and_stride={self.max_pooling_kernels_and_stride},
                             n_units_in_fc_hidden_layers={self.n_units_in_fc_hidden_layers},
                             classes={self.classes},
                             use_gpu={self.use_gpu})'''
 
         s += '\n' + str(self.nnet)
         if self.n_epochs > 0:
-            s += f'\n   Network was trained for {self.n_epochs} epochs that took {self.training_time:.4f} seconds.'
+            s += f'\n   Network was trained for {self.n_epochs} epochs with a batch size of {self.batch_size} and took {self.training_time:.4f} seconds.'
             s += f'\n   Final objective value is {self.error_trace[-1]:.3f}'
         else:
             s += '  Network is not trained.'
@@ -118,11 +131,12 @@ class NeuralNetwork_Convolutional():
             self.XstdsFixed = copy.copy(self.Xstds)
             self.XstdsFixed[self.Xconstant] = 1
 
-    def train(self, X, T, n_epochs, optim='Adam', learning_rate=0.01, verbose=False):
+    def train(self, X, T, n_epochs, batch_size, optim='Adam', learning_rate=0.01, verbose=False):
 
         start_time = time.time()
 
         self.n_epochs = n_epochs
+        self.batch_size = batch_size
         self.learning_rate = learning_rate
 
         if T.ndim == 1:
@@ -150,26 +164,50 @@ class NeuralNetwork_Convolutional():
         else:
             raise Exception('Only \'Adam\' and \'SGD\' are supported optimizers.')
 
+        n_examples = X.shape[0]
+        num_batches = n_examples // batch_size
+
         print_every = n_epochs // 10 if n_epochs > 9 else 1
         for epoch in range(n_epochs):
+            for k in range(num_batches):
+                start, end = k * batch_size, (k + 1) * batch_size
 
-            optimizer.zero_grad()
+                Xbatch = X[start:end, ...]
+                Tbatch = T[start:end, ...]
 
-            Y = self.nnet(X)
-            error = loss(Y, T)
-            self.error_trace.append(error)
+                optimizer.zero_grad()
 
-            error.backward()
+                Y = self.nnet(Xbatch)
+                error = loss(Y, Tbatch)
+                self.error_trace.append(error)
 
-            optimizer.step()
+                error.backward()
+
+                optimizer.step()
 
             if verbose and (epoch + 1) % print_every == 0:
                 print(f'Epoch {epoch + 1} error {error:.5f}')
+
+        if self.use_gpu:
+            X = X.cpu()
+            T = T.cpu()
 
         self.training_time = time.time() - start_time
 
     def get_error_trace(self):
         return self.error_trace
+
+    def cpu(self):
+        if self.use_gpu:
+            self.nnet.cpu()
+            self.use_gpu = False
+
+    def cuda(self):
+        if not torch.cuda.is_available():
+            self.nnet.cuda()
+            self.use_gpu = True
+        else:
+            print('\nGPU is not available. Running on CPU.\n')
 
     def _softmax(self, Y):
         mx = Y.max()
@@ -187,7 +225,9 @@ class NeuralNetwork_Convolutional():
         Y = self.nnet(X)
 
         if self.use_gpu:
+            X = X.cpu()
             Y = Y.cpu()
+
         Y = Y.detach().numpy()
         Yclasses = self.classes[Y.argmax(axis=1)].reshape((-1, 1))
 
