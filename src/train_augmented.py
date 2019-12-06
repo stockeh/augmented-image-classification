@@ -26,13 +26,12 @@ def main():
     Xtrain, Ttrain = dm.load_cifar_10('../notebooks/new-cifar/1var-noise-train')
     Xtest, Ttest = dm.load_cifar_10('../notebooks/new-cifar/1var-noise-test')
 
-    # all_results = []
-
     epochs = 1000
     batch_size = 1500
+    # batch_size = 10
     rho = 0.001
-    conv_layers = [10, 10]
-    conv_kernels = [(6, 4), (3, 3)]
+    conv_layers = [128, 64, 64]
+    conv_kernels = [(6, 4), (3, 3), (2, 2)]
     pooling_kernels = [(4, 4)]
     fc_layers = []
 
@@ -59,7 +58,6 @@ def main():
     current_results['train_pct'] = train_percent
     current_results['test_pct'] = test_percent
 
-    # all_results.append(current_results)
     save_results(res_file, current_results, fieldnames)
 
 if __name__ == '__main__':
