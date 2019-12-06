@@ -28,45 +28,29 @@ def main():
 
     # Can change which data is loaded here if you want to work with a clean dataset
     print('Loading data')
-    Xtrain, Ttrain = dm.load_cifar_10('../notebooks/new-cifar/1var-noise-train')
-    Xtest, Ttest = dm.load_cifar_10('../notebooks/new-cifar/1var-noise-test')
+    # Xtrain, Ttrain = dm.load_cifar_10('../notebooks/new-cifar/1var-noise-train')
+    # Xtest, Ttest = dm.load_cifar_10('../notebooks/new-cifar/1var-noise-test')
+    Xtrain, Ttrain = dm.load_cifar_10('../notebooks/cifar-10-batches-py/data_batch_*')
+    Xtest, Ttest = dm.load_cifar_10('../notebooks/cifar-10-batches-py/test_batch')
     print('Done loading data')
 
     # epochs = 500
     # batch_size = 10
-    epochs = 4000
+    epochs = 1000
     batch_size = 1500
-    rho = 0.001
+    rho = 0.0004
 
-    net_structures = [{'conv_layers': [64, 32, 32],
-        'conv_kernels': [(4, 4), (2, 2), (2, 2)],
-        'pooling_kernels': [(2, 2)],
-        'fc_layers': []},
+    net_structures = [
+        {'conv_layers': [32, 64, 128],
+            'conv_kernels': [(3, 1), (3, 1), (3, 1)],
+            'pooling_kernels': [(2, 2), (2, 2), (2, 2)],
+            'fc_layers': []},
 
-        {'conv_layers': [32, 32, 32],
-        'conv_kernels': [(4, 4), (2, 2), (2, 2)],
-        'pooling_kernels': [(2, 2)],
-        'fc_layers': []},
+        {'conv_layers': [128, 64, 64],
+            'conv_kernels': [(4, 2), (2, 1), (2, 1)],
+            'pooling_kernels': [(2, 2), (2, 2), ()],
+            'fc_layers': []}
 
-        {'conv_layers': [64, 64, 32],
-        'conv_kernels': [(6, 4), (2, 2), (2, 1)],
-        'pooling_kernels': [(2, 2)],
-        'fc_layers': []},
-
-        {'conv_layers': [32, 32, 32],
-        'conv_kernels': [(4, 2), (2, 1), (2, 1)],
-        'pooling_kernels': [(2, 2)],
-        'fc_layers': []},
-
-        {'conv_layers': [128, 128],
-        'conv_kernels': [(4, 2), (2, 1)],
-        'pooling_kernels': [(2, 2)],
-        'fc_layers': []},
-
-        {'conv_layers': [128, 64, 64, 64],
-        'conv_kernels': [(6, 4), (4, 4), (2, 2), (2, 2)],
-        'pooling_kernels': [(2, 2)],
-        'fc_layers': []}
             ]
 
     num_structures = len(net_structures)
@@ -87,6 +71,8 @@ def main():
                 classes=np.unique(Ttrain), use_gpu=True)
 
         nnet.train(Xtrain, Ttrain, n_epochs=epochs, batch_size=batch_size, optim='Adam', learning_rate=rho, verbose=True)
+
+        nnet.cpu()
         current_results['training_time'] = nnet.training_time
         current_results['final_error'] = nnet.error_trace[-1].item()
 
