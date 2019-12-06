@@ -10,6 +10,9 @@ notebooks/cifar-10-batches-py/data_batch_2
 notebooks/cifar-10-batches-py/data_batch_1
 notebooks/cifar-10-batches-py/batches.meta
 
+# Augmented datasets
+notebooks/new-cifar
+
 # Mac Defaults
 .DS_Store
 
