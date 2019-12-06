@@ -13,6 +13,9 @@ notebooks/cifar-10-batches-py/batches.meta
 # Augmented datasets
 notebooks/new-cifar
 
+# Output Training Stats
+src/training-out.csv
+
 # Mac Defaults
 .DS_Store
 
