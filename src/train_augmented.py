@@ -34,7 +34,7 @@ def main():
 
     # epochs = 500
     # batch_size = 10
-    epochs = 1000
+    epochs = 4000
     batch_size = 1500
     rho = 0.001
 
@@ -50,6 +50,21 @@ def main():
 
         {'conv_layers': [128, 64],
         'conv_kernels': [(6, 4), (2, 2)],
+        'pooling_kernels': [(2, 2)],
+        'fc_layers': []},
+
+        {'conv_layers': [128, 64, 32],
+        'conv_kernels': [(6, 4), (4, 4), (2, 2)],
+        'pooling_kernels': [(2, 2)],
+        'fc_layers': []},
+
+        {'conv_layers': [32, 32, 32],
+        'conv_kernels': [(6, 4), (4, 4), (2, 2)],
+        'pooling_kernels': [(2, 2)],
+        'fc_layers': []},
+
+        {'conv_layers': [128, 128, 64],
+        'conv_kernels': [(6, 4), (2, 2), (2, 2)],
         'pooling_kernels': [(2, 2)],
         'fc_layers': []}
             ]
