@@ -28,15 +28,14 @@ def save_cifar_10(new_cifar_path, image_data):
     `load_cifar_10` function, but is not batched like the original CIFAR data.
     """
     try:
-        os.mkdir(new_cifar_path)
-    except FileExistsError:
-        print('Directory {} already exists'.format(new_cifar_path))
+        os.makedirs(os.path.dirname(new_cifar_path), exist_ok=True)
     except:
-        print('Couldn\'t create directory {}'.format(new_cifar_path))
+        print('Couldn\'t create file {}'.format(new_cifar_path))
         return
     raw = {b'data': (image_data[0].reshape(-1, 3072) * 255.0).astype(np.uint8), b'labels': image_data[1].flatten().tolist()}
-    with open(os.path.relpath(new_cifar_path) + '/augmented-cifar', 'wb') as f:
+    with open(os.path.relpath(new_cifar_path), 'wb') as f:
         pickle.dump(raw, f)
 
 def apply_manipulations(image_data, per_func):
-    pass
+    """Apply a perturbation to every image in a set."""
+    return per_func(image_data)
