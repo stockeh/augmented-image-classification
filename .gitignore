@@ -1,4 +1,5 @@
 # Datasets
+*.gz
 mnist.pkl.gz*
 notebooks/cifar-10-python.tar.gz
 notebooks/cifar-10-batches-py/test_batch
@@ -15,6 +16,7 @@ notebooks/new-cifar
 
 # Output Training Stats
 src/training-out.csv
+*.log
 
 # Mac Defaults
 .DS_Store
