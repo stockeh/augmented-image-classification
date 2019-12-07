@@ -59,9 +59,10 @@ def main():
             '1' : [ [(2, 1)] ]
             }
 
-    n_trials = len(l_epochs) * len(l_batch_size) * len(l_rho) * len(l_conn_layers) * len(l_conv_layers)
-    for i, v in enumerate(l_conv_layers):
-        n_trials *= (len(l_conv_kernels[str(len(v))]) * len(l_pool_kernels[str(len(v))]))
+    n_trials = 0
+    for v in l_conv_layers:
+        n_trials += (len(l_conv_kernels[str(len(v))]) * len(l_pool_kernels[str(len(v))]))
+    n_trials *= (len(l_epochs) * len(l_batch_size) * len(l_rho) * len(l_conn_layers))
     trial = 1
 
     for epochs, batch_size, rho, conv, conn in itertools.product(l_epochs, l_batch_size, l_rho,
