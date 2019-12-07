@@ -87,6 +87,7 @@ class NeuralNetwork_Convolutional():
     def _add_maxpool2d(self, n_layers, output_size_previous, pool):
         kernel_size, kernel_stride = pool
         self.nnet.add_module(f'pool_{n_layers}', torch.nn.MaxPool2d(kernel_size, kernel_stride))
+        self.nnet.add_module(f'drop_{n_layers}', torch.nn.Dropout(p=0.2))
         output_size_previous = (output_size_previous - kernel_size) // kernel_stride + 1
         return output_size_previous
 

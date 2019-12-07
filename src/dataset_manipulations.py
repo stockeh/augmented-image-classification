@@ -1,6 +1,7 @@
 # Data manipulations, for loading, altering, and saving batches of input images
 import os
 import glob
+import gzip
 import pickle
 import numpy as np
 
@@ -35,6 +36,28 @@ def save_cifar_10(new_cifar_path, image_data):
     raw = {b'data': (image_data[0].reshape(-1, 3072) * 255.0).astype(np.uint8), b'labels': image_data[1].flatten().tolist()}
     with open(os.path.relpath(new_cifar_path), 'wb') as f:
         pickle.dump(raw, f)
+
+def load_mnist(mnist_path):
+    with gzip.open(mnist_path, 'rb') as f:
+        train_set, valid_set, test_set = pickle.load(f, encoding='latin1')
+    Xtrain = train_set[0].reshape(-1, 1, 28, 28)
+    Ttrain = train_set[1].reshape((-1, 1))
+
+    Xtest  = test_set[0].reshape(-1, 1, 28, 28)
+    Ttest  = test_set[1].reshape((-1, 1))
+
+    Xvalid = valid_set[0].reshape(-1, 1, 28, 28)
+    Tvalid = valid_set[1].reshape((-1, 1))
+
+    return (Xtrain, Ttrain, Xtest, Ttest, Xvalid, Tvalid)
+
+def save_mnist(train, test, valid, mnist_path):
+    train = (train[0].reshape(-1, 784), train[1].flatten())
+    test = (test[0].reshape(-1, 784), test[1].flatten())
+    valid = (valid[0].reshape(-1, 784), valid[1].flatten())
+
+    with gzip.open(mnist_path, 'wb') as f:
+        pickle.dump((train, valid, test), f)
 
 def apply_manipulations(image_data, per_func):
     """Apply a perturbation to every image in a set."""

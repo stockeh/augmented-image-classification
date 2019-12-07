@@ -36,22 +36,28 @@ def main():
 
     # epochs = 500
     # batch_size = 10
-    epochs = 1000
+    epochs = 10#0
     batch_size = 1500
     rho = 0.0004
 
     net_structures = [
+        {'conv_layers': [32, 64, 96],
+            'conv_kernels': [(4, 2), (2, 2), (2, 2)],
+            'pooling_kernels': [(2, 1), (2, 1), (2, 1)],
+            'fc_layers': []}]
+
+    """
         {'conv_layers': [32, 64, 128],
             'conv_kernels': [(3, 1), (3, 1), (3, 1)],
-            'pooling_kernels': [(2, 2), (2, 2), (2, 2)],
+            'pooling_kernels': [(2, 1), (2, 1), (2, 1)],
             'fc_layers': []},
 
         {'conv_layers': [128, 64, 64],
             'conv_kernels': [(4, 2), (2, 1), (2, 1)],
-            'pooling_kernels': [(2, 2), (2, 2), ()],
+            'pooling_kernels': [(2, 1), (2, 1), ()],
             'fc_layers': []}
-
             ]
+    """
 
     num_structures = len(net_structures)
     for i, s in enumerate(net_structures):
