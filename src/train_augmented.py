@@ -4,6 +4,7 @@ import numpy as np
 import neuralnetworkclassifier as nnc
 import dataset_manipulations as dm
 import mlutils as ml
+import itertools
 from csv import DictWriter
 
 def prep_results_file(res_file, fieldnames):
@@ -34,61 +35,80 @@ def main():
     Xtest, Ttest = dm.load_cifar_10('../notebooks/cifar-10-batches-py/test_batch')
     print('Done loading data')
 
-    # epochs = 500
-    # batch_size = 10
-    epochs = 10#0
-    batch_size = 1500
-    rho = 0.0004
+    l_epochs = [ 10, 100, 1000 ]
+    l_batch_size = [ 100, 1000, 2000 ]
+    l_rho = [ 0.001, 0.0005, 0.0001 ]
+    l_conn_layers = [ [ ] ]
+    l_conv_layers = [ [32, 64, 96], [32, 64, 128], [128, 64, 64] ]
 
-    net_structures = [
-        {'conv_layers': [32, 64, 96],
-            'conv_kernels': [(4, 2), (2, 2), (2, 2)],
-            'pooling_kernels': [(2, 1), (2, 1), (2, 1)],
-            'fc_layers': []}]
+    l_conv_kernels = {
+            '3' : [ [(4, 2), (2, 2), (2, 2)],
+                    [(3, 1), (3, 1), (3, 1)],
+                    [(4, 2), (2, 1), (2, 1)] ],
+            '2' : [ [(4, 2), (2, 2)],
+                    [(3, 1), (3, 1)],
+                    [(4, 2), (2, 1)] ],
+            '1' : [ [(4, 2)],
+                    [(3, 1)],
+                    [(4, 2)] ]
+            }
+    l_pool_kernels = {
+            '3' : [ [(2, 1), (2, 1), (2, 1)],
+                    [(2, 1), (2, 1), ()],
+                    [(2, 1), (), ()] ],
+            '2' : [ [(2, 1), (2, 1)],
+                    [(2, 1), ()] ],
+            '1' : [ [(2, 1)] ]
+            }
 
-    """
-        {'conv_layers': [32, 64, 128],
-            'conv_kernels': [(3, 1), (3, 1), (3, 1)],
-            'pooling_kernels': [(2, 1), (2, 1), (2, 1)],
-            'fc_layers': []},
+    n_trials = len(l_epochs) * len(l_batch_size) * len(l_rho) * len(l_conn_layers) * len(l_conv_layers)
+    for i, v in enumerate(l_conv_layers):
+        n_trials *= (len(l_conv_kernels[str(len(v))]) * len(l_pool_kernels[str(len(v))]))
+    trial = 0
 
-        {'conv_layers': [128, 64, 64],
-            'conv_kernels': [(4, 2), (2, 1), (2, 1)],
-            'pooling_kernels': [(2, 1), (2, 1), ()],
-            'fc_layers': []}
-            ]
-    """
+    for epochs, batch_size, rho, conv, conn in itertools.product(l_epochs, l_batch_size, l_rho,
+                                                                 l_conv_layers, l_conn_layers):
 
-    num_structures = len(net_structures)
-    for i, s in enumerate(net_structures):
-        print('\n###### Trying network structure {} of {} ######'.format(i + 1, num_structures))
-        current_results = {'epochs': epochs, 'batch_size': batch_size,
-                'learning_rate': rho, 'conv_layers': str(s['conv_layers']),
-                'conv_kernel_stride': s['conv_kernels'],
-                'max_pool_kernel_stride': s['pooling_kernels'], 'fc_layers':
-                s['fc_layers']}
+        for conv_kernels, pool_kernels in itertools.product(l_conv_kernels[str(len(conv))],
+                                                            l_pool_kernels[str(len(conv))]):
 
-        nnet = nnc.NeuralNetwork_Convolutional(n_channels_in_image=Xtrain.shape[1],
-                image_size=Xtrain.shape[2],
-                n_units_in_conv_layers=s['conv_layers'],
-                kernels_size_and_stride=s['conv_kernels'],
-                max_pooling_kernels_and_stride=s['pooling_kernels'],
-                n_units_in_fc_hidden_layers=s['fc_layers'],
-                classes=np.unique(Ttrain), use_gpu=True)
+            print('\n###### Trying network structure {} out of {} ######'.format(trial, n_trials))
 
-        nnet.train(Xtrain, Ttrain, n_epochs=epochs, batch_size=batch_size, optim='Adam', learning_rate=rho, verbose=True)
+            results = {
+                    'epochs': epochs, 'batch_size': batch_size,
+                    'learning_rate': rho, 'conv_layers': conv,
+                    'conv_kernel_stride': conv_kernels,
+                    'max_pool_kernel_stride': pool_kernels,
+                    'fc_layers': conn
+                    }
 
-        nnet.cpu()
-        current_results['training_time'] = nnet.training_time
-        current_results['final_error'] = nnet.error_trace[-1].item()
+            nnet = nnc.NeuralNetwork_Convolutional(n_channels_in_image=Xtrain.shape[1],
+                                                   image_size=Xtrain.shape[2],
+                                                   n_units_in_conv_layers=results['conv_layers'],
+                                                   kernels_size_and_stride=results['conv_kernel_stride'],
+                                                   max_pooling_kernels_and_stride=results['max_pool_kernel_stride'],
+                                                   n_units_in_fc_hidden_layers=results['fc_layers'],
+                                                   classes=np.unique(Ttrain), use_gpu=True)
 
-        train_percent = ml.percent_correct(Ttrain, nnet.use(Xtrain)[0])
-        test_percent = ml.percent_correct(Ttest, nnet.use(Xtest)[0])
+            nnet.train(Xtrain, Ttrain, n_epochs=results['epochs'], batch_size=results['batch_size'],
+                       optim='Adam', learning_rate=results['learning_rate'], verbose=True)
 
-        current_results['train_pct'] = train_percent
-        current_results['test_pct'] = test_percent
+            try:
+                train_percent = ml.percent_correct(Ttrain, nnet.use(Xtrain)[0])
+                test_percent = ml.percent_correct(Ttest, nnet.use(Xtest)[0])
+            except:
+                print("Failed to run on GPU -> Moving nnet to CPU")
+                nnet.cpu()
+                train_percent = ml.percent_correct(Ttrain, nnet.use(Xtrain)[0])
+                test_percent = ml.percent_correct(Ttest, nnet.use(Xtest)[0])
 
-        save_results(res_file, current_results, fieldnames)
+            results['training_time'] = nnet.training_time
+            results['final_error'] = nnet.error_trace[-1].item()
+            results['train_pct'] = train_percent
+            results['test_pct'] = test_percent
+
+            save_results(res_file, results, fieldnames)
+            trial =+ 1
 
     full_end = time.time()
     print('Start time: {}'.format(time.ctime(full_start)))
