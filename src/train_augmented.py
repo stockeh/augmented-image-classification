@@ -28,23 +28,21 @@ def main():
     prep_results_file(res_file, fieldnames)
 
     # Can change which data is loaded here if you want to work with a clean dataset
-    print('Loading data')
+    print('Loading data', flush=True)
     # Xtrain, Ttrain = dm.load_cifar_10('../notebooks/new-cifar/1var-noise-train')
     # Xtest, Ttest = dm.load_cifar_10('../notebooks/new-cifar/1var-noise-test')
     Xtrain, Ttrain = dm.load_cifar_10('../notebooks/cifar-10-batches-py/data_batch_*')
     Xtest, Ttest = dm.load_cifar_10('../notebooks/cifar-10-batches-py/test_batch')
-    print('Done loading data')
+    print('Done loading data', flush=True)
 
-    l_epochs = [ 10, 100, 1000 ]
-    l_batch_size = [ 100, 1000, 2000 ]
-    l_rho = [ 0.001, 0.0005, 0.0001 ]
+    l_epochs = [ 25 ]
+    l_batch_size = [ 500, 1000 ]
+    l_rho = [ 0.001 ]
     l_conn_layers = [ [ ] ]
-    l_conv_layers = [ [32, 64, 96], [32, 64, 128], [128, 64, 64] ]
+    l_conv_layers = [ [32, 64, 96] ]
 
     l_conv_kernels = {
-            '3' : [ [(4, 2), (2, 2), (2, 2)],
-                    [(3, 1), (3, 1), (3, 1)],
-                    [(4, 2), (2, 1), (2, 1)] ],
+            '3' : [ [(4, 2), (2, 2), (2, 2)] ],
             '2' : [ [(4, 2), (2, 2)],
                     [(3, 1), (3, 1)],
                     [(4, 2), (2, 1)] ],
@@ -64,7 +62,7 @@ def main():
     n_trials = len(l_epochs) * len(l_batch_size) * len(l_rho) * len(l_conn_layers) * len(l_conv_layers)
     for i, v in enumerate(l_conv_layers):
         n_trials *= (len(l_conv_kernels[str(len(v))]) * len(l_pool_kernels[str(len(v))]))
-    trial = 0
+    trial = 1
 
     for epochs, batch_size, rho, conv, conn in itertools.product(l_epochs, l_batch_size, l_rho,
                                                                  l_conv_layers, l_conn_layers):
@@ -72,7 +70,7 @@ def main():
         for conv_kernels, pool_kernels in itertools.product(l_conv_kernels[str(len(conv))],
                                                             l_pool_kernels[str(len(conv))]):
 
-            print('\n###### Trying network structure {} out of {} ######'.format(trial, n_trials))
+            print('\n###### Trying network structure {} out of {} ######'.format(trial, n_trials), flush=True)
 
             results = {
                     'epochs': epochs, 'batch_size': batch_size,
@@ -97,7 +95,7 @@ def main():
                 train_percent = ml.percent_correct(Ttrain, nnet.use(Xtrain)[0])
                 test_percent = ml.percent_correct(Ttest, nnet.use(Xtest)[0])
             except:
-                print("Failed to run on GPU -> Moving nnet to CPU")
+                print("Failed to run on GPU -> Moving nnet to CPU", flush=True)
                 nnet.cpu()
                 train_percent = ml.percent_correct(Ttrain, nnet.use(Xtrain)[0])
                 test_percent = ml.percent_correct(Ttest, nnet.use(Xtest)[0])
@@ -108,12 +106,12 @@ def main():
             results['test_pct'] = test_percent
 
             save_results(res_file, results, fieldnames)
-            trial =+ 1
+            trial += 1
 
     full_end = time.time()
-    print('Start time: {}'.format(time.ctime(full_start)))
-    print('End time: {}'.format(time.ctime(full_end)))
-    print('Total duration: {} seconds'.format(full_end - full_start))
+    print('Start time: {}'.format(time.ctime(full_start)), flush=True)
+    print('End time: {}'.format(time.ctime(full_end)), flush=True)
+    print('Total duration: {} seconds'.format(full_end - full_start), flush=True)
 
 if __name__ == '__main__':
     main()

@@ -16,6 +16,7 @@ notebooks/new-cifar
 
 # Output Training Stats
 src/training-out.csv
+*.log
 
 # Mac Defaults
 .DS_Store
