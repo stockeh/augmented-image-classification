@@ -1,4 +1,5 @@
 import numpy as np
+import random
 import torch
 import time
 import copy
@@ -10,7 +11,7 @@ class NeuralNetwork_Convolutional():
                  n_units_in_conv_layers, kernels_size_and_stride,
                  max_pooling_kernels_and_stride,
                  n_units_in_fc_hidden_layers,
-                 classes, use_gpu=False):
+                 classes, use_gpu=False, random_seed=None):
 
         if not isinstance(n_units_in_conv_layers, list):
             raise Exception('n_units_in_conv_layers must be a list')
@@ -21,6 +22,16 @@ class NeuralNetwork_Convolutional():
         if use_gpu and not torch.cuda.is_available():
             print('\nGPU is not available. Running on CPU.\n')
             use_gpu = False
+
+        if random_seed is not None:
+            torch.manual_seed(random_seed)
+            torch.cuda.manual_seed(random_seed)
+            torch.cuda.manual_seed_all(random_seed)  # if you are using multi-GPU.
+            np.random.seed(random_seed)              # Numpy module.
+            random.seed(random_seed)                 # Python random module.
+            torch.manual_seed(random_seed)
+            torch.backends.cudnn.benchmark = False
+            torch.backends.cudnn.deterministic = True
 
         self.n_channels_in_image = n_channels_in_image
         self.image_size = image_size

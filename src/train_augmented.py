@@ -35,14 +35,14 @@ def main():
     Xtest, Ttest = dm.load_cifar_10('../notebooks/cifar-10-batches-py/test_batch')
     print('Done loading data', flush=True)
 
-    l_epochs = [ 25 ]
-    l_batch_size = [ 500, 1000 ]
-    l_rho = [ 0.001 ]
+    l_epochs = [ 50 ]
+    l_batch_size = [ 1000, 500 ]
+    l_rho = [ 0.0001, 0.001 ]
     l_conn_layers = [ [ ] ]
-    l_conv_layers = [ [32, 64, 96] ]
+    l_conv_layers = [ [150, 100, 50] ]
 
     l_conv_kernels = {
-            '3' : [ [(4, 2), (2, 2), (2, 2)] ],
+            '3' : [ [(6, 2), (3, 2), (2, 1)] ],
             '2' : [ [(4, 2), (2, 2)],
                     [(3, 1), (3, 1)],
                     [(4, 2), (2, 1)] ],
@@ -51,9 +51,8 @@ def main():
                     [(4, 2)] ]
             }
     l_pool_kernels = {
-            '3' : [ [(2, 1), (2, 1), (2, 1)],
-                    [(2, 1), (2, 1), ()],
-                    [(2, 1), (), ()] ],
+            '3' : [ [(2, 2), (2, 1), ()],
+                    [(2, 2), (2, 1), ()] ],
             '2' : [ [(2, 1), (2, 1)],
                     [(2, 1), ()] ],
             '1' : [ [(2, 1)] ]
