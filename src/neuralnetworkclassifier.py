@@ -87,19 +87,29 @@ class NeuralNetwork_Convolutional():
 
     def _add_conv2d_tanh(self, n_layers, n_units_previous, output_size_previous,
                    n_units, kernel_size_and_stride):
-        kernel_size, kernel_stride = kernel_size_and_stride
-        self.nnet.add_module(f'conv_{n_layers}', torch.nn.Conv2d(n_units_previous, n_units,
-                                                                 kernel_size, kernel_stride))
-        self.nnet.add_module(f'output_{n_layers}', torch.nn.Tanh())
-        output_size_previous = (output_size_previous - kernel_size) // kernel_stride + 1
+        if len(kernel_size_and_stride) == 2:
+            kernel_size, kernel_stride = kernel_size_and_stride
+            padding = 0
+        else:
+            kernel_size, kernel_stride, padding = kernel_size_and_stride
+        self.nnet.add_module(f'conv_{n_layers}', torch.nn.Conv2d(n_units_previous, n_units, kernel_size,
+                                                                 kernel_stride, padding=padding))
+        self.nnet.add_module(f'norm_{n_layers}', torch.nn.BatchNorm2d(n_units))
+        self.nnet.add_module(f'output_{n_layers}', torch.nn.ReLU())
+        output_size_previous = (output_size_previous + 2 * padding - kernel_size) // kernel_stride + 1
         n_units_previous = n_units
         return n_units_previous, output_size_previous
 
     def _add_maxpool2d(self, n_layers, output_size_previous, pool):
-        kernel_size, kernel_stride = pool
-        self.nnet.add_module(f'pool_{n_layers}', torch.nn.MaxPool2d(kernel_size, kernel_stride))
+        if len(pool) == 2:
+            kernel_size, kernel_stride = pool
+            padding = 0
+        else:
+            kernel_size, kernel_stride, padding = pool
+        self.nnet.add_module(f'pool_{n_layers}', torch.nn.MaxPool2d(kernel_size, kernel_stride,
+                                                                    padding=padding))
         self.nnet.add_module(f'drop_{n_layers}', torch.nn.Dropout(p=0.2))
-        output_size_previous = (output_size_previous - kernel_size) // kernel_stride + 1
+        output_size_previous = (output_size_previous + 2 * padding - kernel_size) // kernel_stride + 1
         return output_size_previous
 
     def _add_fc_tanh(self, n_layers, n_inputs, n_units):
