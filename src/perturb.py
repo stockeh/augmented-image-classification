@@ -96,8 +96,13 @@ def imshow(nnet, Xset, Xcopy, Tset, same_index, model,
     plt.show();
 
 def classified_diff(nnet, Xset, Xcopy, Tset):
-    Xset_classes, _  = nnet.use(Xset)
-    Xcopy_classes, _ = nnet.use(Xcopy)
+
+    try:
+        Xset_classes, _  = nnet.use(Xset)
+        Xcopy_classes, _ = nnet.use(Xcopy)
+    except:
+        Xset_classes = ml.batched_use(nnet, Xset)
+        Xcopy_classes = ml.batched_use(nnet, Xcopy)
 
     diff_index = [ i for i in range(len(Xset_classes))
                   if Xset_classes[i] == Tset[i]
@@ -208,14 +213,18 @@ def change_in_pixels_plot(nnet, Xset, Tset, end_pixel_val=10, trials_per_pixel=5
         change = []
 
         for pixels in range(end_pixel_val):
-            percent_diff_arr = []
+            accuracy = []
             for trial in range(trials_per_pixel):
                 Xcopy = change_pixel(Xset, pixels_to_change=pixels+1, pertrub=perturb)
-                percent_diff_arr.append(classified_diff(nnet, Xset, Xcopy, Tset)[1])
+                try:
+                    percent = ml.percent_correct(nnet.use(Xcopy)[0], Tset)
+                except:
+                    percent = ml.percent_correct(ml.batched_use(nnet, Xcopy), Tset)
 
+                accuracy.append(percent)
                 f.value += 1
 
-            change.append(percent_diff_arr)
+            change.append(accuracy)
 
         change = np.array(change)
 
@@ -226,8 +235,15 @@ def change_in_pixels_plot(nnet, Xset, Tset, end_pixel_val=10, trials_per_pixel=5
         plt.errorbar(x, y, yerr=yerr, marker='.', lw=1, capsize=5, capthick=1.5,
                      markeredgecolor='k', label=f'{perturb}', color=COLORS[i])
 
+    try:
+        natural_per = ml.percent_correct(nnet.use(Xset)[0], Tset)
+    except:
+        natural_per = ml.percent_correct(ml.batched_use(nnet, Xset), Tset)
+
+    plt.hlines(natural_per, 1, change.shape[0], label=f'natural',
+               linestyle='dashed', alpha=0.3)
     plt.xlabel('Number of Pixels Changed')
-    plt.ylabel('Mean \% Misclassified')
+    plt.ylabel('Accuracy ( \% )')
     plt.legend(loc='best', fontsize='large')
     plt.grid(True); plt.tight_layout();
     plt.savefig(name, bbox_inches='tight')

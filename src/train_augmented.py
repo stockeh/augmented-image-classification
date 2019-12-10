@@ -18,16 +18,6 @@ def save_results(res_file, results_dict, fieldnames):
         writer = DictWriter(f, fieldnames=fieldnames)
         writer.writerow(results_dict)
 
-def batched_use(nnet, Xset, Tset):
-    correct = 0
-    total = 0
-    for img, t in zip(Xset, Tset):
-        if nnet.use([img])[0] == t:
-            correct += 1
-        total += 1
-    percent = (correct / total) * 100
-    return percent
-
 def main():
     full_start = time.time()
     res_file = './training-out.csv'
@@ -45,22 +35,24 @@ def main():
     Xtest, Ttest = dm.load_cifar_10('../notebooks/cifar-10-batches-py/test_batch')
     print('Done loading data', flush=True)
 
-    l_epochs = [ 20 ]
-    l_batch_size = [ 100 ]
-    l_rho = [ 0.0005 ]
-    l_conn_layers = [ [ ] ]
-    l_conv_layers = [ [64, 64, 128, 128, 256, 256] ]
+    l_epochs = [ 10, 20 ]
+    l_batch_size = [ 125 ]
+    l_rho = [ 0.0005, 0.001 ]
+    l_conn_layers = [ [ ], [256] ]
+    l_conv_layers = [ [64, 64, 128, 128, 256, 256, 512, 512],
+                      [128, 128, 128, 128, 256, 256, 512, 512] ]
 
     l_conv_kernels = {
-            '8' : [ [(3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1)] ],
-            '6' : [ [(3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1)] ],
+            '8' : [ [(5, 1, 2), (5, 1, 2), (3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1)],
+                    [(3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1)] ],
+            '6' : [ [(5, 1, 2), (5, 1, 2), (3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1)] ],
             '3' : [ [(6, 2), (3, 2), (2, 1)] ],
             '2' : [ [(4, 2), (2, 2)] ],
             '1' : [ [(4, 2)] ]
             }
     l_pool_kernels = {
-            '8' : [ (), (2, 2), (), (2, 2), (), (2, 2), (), (2, 2)] ],
-            '6' : [ (), (2, 2), (), (2, 2), (), (2, 2)] ],
+            '8' : [ [ (), (2, 2), (), (2, 2), (), (2, 2), (), (2, 2)] ],
+            '6' : [ [ (), (2, 2), (), (2, 2), (), (2, 2)] ],
             '3' : [ [(2, 2), (2, 1), ()] ],
             '2' : [ [(2, 1), (2, 1)] ],
             '1' : [ [(2, 1)] ]
@@ -99,8 +91,8 @@ def main():
             nnet.train(Xtrain, Ttrain, n_epochs=results['epochs'], batch_size=results['batch_size'],
                        optim='Adam', learning_rate=results['learning_rate'], verbose=True)
 
-            train_percent = batched_use(nnet, Xtrain, Ttrain)
-            test_percent = batched_use(nnet, Xtest, Ttest)
+            train_percent =  ml.percent_correct(ml.batched_use(nnet, Xtrain), Ttrain)
+            train_percent =  ml.percent_correct(ml.batched_use(nnet, Xtest), Ttest)
 
             results['training_time'] = nnet.training_time
             results['final_error'] = nnet.error_trace[-1].item()

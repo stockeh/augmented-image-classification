@@ -239,18 +239,24 @@ class NeuralNetwork_Convolutional():
 
     def use(self, X):
         self.nnet.eval()  # turn off gradients and other aspects of training
-        X = self._standardizeX(X)
-        X = torch.tensor(X)
-        if self.use_gpu:
-            X = X.cuda()
+        try:
+            X = self._standardizeX(X)
+            X = torch.tensor(X)
+            if self.use_gpu:
+                X = X.cuda()
 
-        Y = self.nnet(X)
+            Y = self.nnet(X)
 
-        if self.use_gpu:
+            if self.use_gpu:
+                X = X.cpu()
+                Y = Y.cpu()
+
+            Y = Y.detach().numpy()
+            Yclasses = self.classes[Y.argmax(axis=1)].reshape((-1, 1))
+
+        except:
             X = X.cpu()
             Y = Y.cpu()
-
-        Y = Y.detach().numpy()
-        Yclasses = self.classes[Y.argmax(axis=1)].reshape((-1, 1))
+            raise Exception('CUDA out of memory, pass less items for X to use.')
 
         return Yclasses, self._softmax(Y)
