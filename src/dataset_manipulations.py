@@ -13,7 +13,7 @@ def load_cifar_10(cifar_glob_path):
     """
     images = []
     labels = []
-    for file in glob.glob(cifar_glob_path):
+    for file in sorted(glob.glob(cifar_glob_path)):
         with open(file, 'rb') as fo:
             raw = pickle.load(fo, encoding='bytes')
             images.append(raw[b'data'])
