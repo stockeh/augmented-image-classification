@@ -202,6 +202,8 @@ def test_increasing_noise(nnet, Xset, Tset, var_range=(0.001, 0.05), num_steps=5
     y = np.mean(change, axis=1)
     yerr = np.std(change, axis=1)
 
+    plt.figure(figsize=(6, 4))
+    
     plt.errorbar(x, y, yerr=yerr, marker='.', lw=1, capsize=5, capthick=1.5,
                  markeredgecolor='k', color=COLORS[0])
 
