@@ -223,28 +223,28 @@ def test_increasing_noise(nnet, Xset, Tset, var_range=(0.001, 0.05), num_steps=5
 
 ######################################################################
 
-def train_mnist(Xtrain, Ttrain, verbose=False):
+def train_mnist(Xtrain, Ttrain, verbose=False, random_seed=12):
     nnet = nnc.NeuralNetwork_Convolutional(n_channels_in_image=Xtrain.shape[1],
                                            image_size=Xtrain.shape[2],
                                            n_units_in_conv_layers=[10],
                                            kernels_size_and_stride=[(7, 3)],
                                            max_pooling_kernels_and_stride=[(2, 2)],
                                            n_units_in_fc_hidden_layers=[],
-                                           classes=np.unique(Ttrain), use_gpu=True, random_seed=12)
+                                           classes=np.unique(Ttrain), use_gpu=True, random_seed=random_seed)
 
     nnet.train(Xtrain, Ttrain, n_epochs=50, batch_size=1500,
                optim='Adam', learning_rate=0.05, verbose=verbose)
 
     return nnet
 
-def train_cifar(Xtrain, Ttrain, verbose=False):
+def train_cifar(Xtrain, Ttrain, verbose=False, random_seed=12):
     nnet = nnc.NeuralNetwork_Convolutional(n_channels_in_image=Xtrain.shape[1],
                                image_size=Xtrain.shape[2],
                                n_units_in_conv_layers=[64, 64, 128, 128, 256, 256, 512, 512],
                                kernels_size_and_stride=[(3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1)],
                                max_pooling_kernels_and_stride=[(), (2, 2), (), (2, 2), (), (2, 2), (), (2, 2)],
                                n_units_in_fc_hidden_layers=[],
-                               classes=np.unique(Ttrain), use_gpu=True, random_seed=12)
+                               classes=np.unique(Ttrain), use_gpu=True, random_seed=random_seed)
 
     nnet.train(Xtrain, Ttrain, n_epochs=20, batch_size=100,
                optim='Adam', learning_rate=0.0005, verbose=verbose)
