@@ -259,3 +259,13 @@ class NeuralNetwork_Convolutional():
             raise Exception('CUDA out of memory, pass less items for X to use.')
 
         return Yclasses, self._softmax(Y)
+
+    def transfer_learn_setup(self, additional_layers, freeze=True):
+        if freeze:
+            for p in self.nnet.parameters():
+                p.requires_grad = False
+        all_layers = list(self.nnet)[:-1] + additional_layers
+        new_network = torch.nn.Sequential(*all_layers)
+        if self.use_gpu:
+            new_network.cuda()
+        return new_network
