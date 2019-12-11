@@ -302,7 +302,7 @@ def test_increasing_noise(nnet, Xset, Tset, var_range=(0.001, 0.05), num_steps=5
                linestyle='dashed', alpha=0.3)
 
     plt.xticks(np.linspace(var_range[0], var_range[1], num_steps))
-    plt.xlabel('Number of Pixels Changed')
+    plt.xlabel('Variance of Noise')
     plt.ylabel('Accuracy ( \% )')
     plt.legend(loc='best', fontsize='large')
     plt.grid(True); plt.tight_layout();
