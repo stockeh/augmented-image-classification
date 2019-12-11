@@ -35,27 +35,26 @@ def main():
     Xtest, Ttest = dm.load_cifar_10('../notebooks/cifar-10-batches-py/test_batch')
     print('Done loading data', flush=True)
 
-    l_epochs = [ 25 ]
-    l_batch_size = [ 500, 1000 ]
-    l_rho = [ 0.001 ]
-    l_conn_layers = [ [ ] ]
-    l_conv_layers = [ [32, 64, 96] ]
+    l_epochs = [ 10, 20 ]
+    l_batch_size = [ 125 ]
+    l_rho = [ 0.0005, 0.001 ]
+    l_conn_layers = [ [ ], [256] ]
+    l_conv_layers = [ [64, 64, 128, 128, 256, 256, 512, 512],
+                      [128, 128, 128, 128, 256, 256, 512, 512] ]
 
     l_conv_kernels = {
-            '3' : [ [(4, 2), (2, 2), (2, 2)] ],
-            '2' : [ [(4, 2), (2, 2)],
-                    [(3, 1), (3, 1)],
-                    [(4, 2), (2, 1)] ],
-            '1' : [ [(4, 2)],
-                    [(3, 1)],
-                    [(4, 2)] ]
+            '8' : [ [(5, 1, 2), (5, 1, 2), (3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1)],
+                    [(3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1)] ],
+            '6' : [ [(5, 1, 2), (5, 1, 2), (3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1)] ],
+            '3' : [ [(6, 2), (3, 2), (2, 1)] ],
+            '2' : [ [(4, 2), (2, 2)] ],
+            '1' : [ [(4, 2)] ]
             }
     l_pool_kernels = {
-            '3' : [ [(2, 1), (2, 1), (2, 1)],
-                    [(2, 1), (2, 1), ()],
-                    [(2, 1), (), ()] ],
-            '2' : [ [(2, 1), (2, 1)],
-                    [(2, 1), ()] ],
+            '8' : [ [ (), (2, 2), (), (2, 2), (), (2, 2), (), (2, 2)] ],
+            '6' : [ [ (), (2, 2), (), (2, 2), (), (2, 2)] ],
+            '3' : [ [(2, 2), (2, 1), ()] ],
+            '2' : [ [(2, 1), (2, 1)] ],
             '1' : [ [(2, 1)] ]
             }
 
@@ -87,19 +86,13 @@ def main():
                                                    kernels_size_and_stride=results['conv_kernel_stride'],
                                                    max_pooling_kernels_and_stride=results['max_pool_kernel_stride'],
                                                    n_units_in_fc_hidden_layers=results['fc_layers'],
-                                                   classes=np.unique(Ttrain), use_gpu=True)
+                                                   classes=np.unique(Ttrain), use_gpu=True, random_seed=12)
 
             nnet.train(Xtrain, Ttrain, n_epochs=results['epochs'], batch_size=results['batch_size'],
                        optim='Adam', learning_rate=results['learning_rate'], verbose=True)
 
-            try:
-                train_percent = ml.percent_correct(Ttrain, nnet.use(Xtrain)[0])
-                test_percent = ml.percent_correct(Ttest, nnet.use(Xtest)[0])
-            except:
-                print("Failed to run on GPU -> Moving nnet to CPU", flush=True)
-                nnet.cpu()
-                train_percent = ml.percent_correct(Ttrain, nnet.use(Xtrain)[0])
-                test_percent = ml.percent_correct(Ttest, nnet.use(Xtest)[0])
+            train_percent =  ml.percent_correct(ml.batched_use(nnet, Xtrain), Ttrain)
+            train_percent =  ml.percent_correct(ml.batched_use(nnet, Xtest), Ttest)
 
             results['training_time'] = nnet.training_time
             results['final_error'] = nnet.error_trace[-1].item()

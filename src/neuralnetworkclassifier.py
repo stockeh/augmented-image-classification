@@ -1,4 +1,5 @@
 import numpy as np
+import random
 import torch
 import time
 import copy
@@ -10,7 +11,7 @@ class NeuralNetwork_Convolutional():
                  n_units_in_conv_layers, kernels_size_and_stride,
                  max_pooling_kernels_and_stride,
                  n_units_in_fc_hidden_layers,
-                 classes, use_gpu=False):
+                 classes, use_gpu=False, random_seed=None):
 
         if not isinstance(n_units_in_conv_layers, list):
             raise Exception('n_units_in_conv_layers must be a list')
@@ -21,6 +22,16 @@ class NeuralNetwork_Convolutional():
         if use_gpu and not torch.cuda.is_available():
             print('\nGPU is not available. Running on CPU.\n')
             use_gpu = False
+
+        if random_seed is not None:
+            torch.manual_seed(random_seed)
+            torch.cuda.manual_seed(random_seed)
+            torch.cuda.manual_seed_all(random_seed)  # if you are using multi-GPU.
+            np.random.seed(random_seed)              # Numpy module.
+            random.seed(random_seed)                 # Python random module.
+            torch.manual_seed(random_seed)
+            torch.backends.cudnn.benchmark = False
+            torch.backends.cudnn.deterministic = True
 
         self.n_channels_in_image = n_channels_in_image
         self.image_size = image_size
@@ -76,19 +87,29 @@ class NeuralNetwork_Convolutional():
 
     def _add_conv2d_tanh(self, n_layers, n_units_previous, output_size_previous,
                    n_units, kernel_size_and_stride):
-        kernel_size, kernel_stride = kernel_size_and_stride
-        self.nnet.add_module(f'conv_{n_layers}', torch.nn.Conv2d(n_units_previous, n_units,
-                                                                 kernel_size, kernel_stride))
-        self.nnet.add_module(f'output_{n_layers}', torch.nn.Tanh())
-        output_size_previous = (output_size_previous - kernel_size) // kernel_stride + 1
+        if len(kernel_size_and_stride) == 2:
+            kernel_size, kernel_stride = kernel_size_and_stride
+            padding = 0
+        else:
+            kernel_size, kernel_stride, padding = kernel_size_and_stride
+        self.nnet.add_module(f'conv_{n_layers}', torch.nn.Conv2d(n_units_previous, n_units, kernel_size,
+                                                                 kernel_stride, padding=padding))
+        self.nnet.add_module(f'norm_{n_layers}', torch.nn.BatchNorm2d(n_units))
+        self.nnet.add_module(f'output_{n_layers}', torch.nn.ReLU())
+        output_size_previous = (output_size_previous + 2 * padding - kernel_size) // kernel_stride + 1
         n_units_previous = n_units
         return n_units_previous, output_size_previous
 
     def _add_maxpool2d(self, n_layers, output_size_previous, pool):
-        kernel_size, kernel_stride = pool
-        self.nnet.add_module(f'pool_{n_layers}', torch.nn.MaxPool2d(kernel_size, kernel_stride))
+        if len(pool) == 2:
+            kernel_size, kernel_stride = pool
+            padding = 0
+        else:
+            kernel_size, kernel_stride, padding = pool
+        self.nnet.add_module(f'pool_{n_layers}', torch.nn.MaxPool2d(kernel_size, kernel_stride,
+                                                                    padding=padding))
         self.nnet.add_module(f'drop_{n_layers}', torch.nn.Dropout(p=0.2))
-        output_size_previous = (output_size_previous - kernel_size) // kernel_stride + 1
+        output_size_previous = (output_size_previous + 2 * padding - kernel_size) // kernel_stride + 1
         return output_size_previous
 
     def _add_fc_tanh(self, n_layers, n_inputs, n_units):
@@ -218,18 +239,23 @@ class NeuralNetwork_Convolutional():
 
     def use(self, X):
         self.nnet.eval()  # turn off gradients and other aspects of training
-        X = self._standardizeX(X)
-        X = torch.tensor(X)
-        if self.use_gpu:
-            X = X.cuda()
+        try:
+            X = self._standardizeX(X)
+            X = torch.tensor(X)
+            if self.use_gpu:
+                X = X.cuda()
 
-        Y = self.nnet(X)
+            Y = self.nnet(X)
 
-        if self.use_gpu:
+            if self.use_gpu:
+                X = X.cpu()
+                Y = Y.cpu()
+
+            Y = Y.detach().numpy()
+            Yclasses = self.classes[Y.argmax(axis=1)].reshape((-1, 1))
+
+        except:
             X = X.cpu()
-            Y = Y.cpu()
-
-        Y = Y.detach().numpy()
-        Yclasses = self.classes[Y.argmax(axis=1)].reshape((-1, 1))
+            raise Exception('CUDA out of memory, pass less items for X to use.')
 
         return Yclasses, self._softmax(Y)

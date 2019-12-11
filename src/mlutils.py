@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 # Machine Learning Utilities.
 #
 #  percent_correct
+#  batched_use
 #  partition
 #  confusion_matrix
 #  print_confusion_matrix
@@ -14,6 +15,14 @@ import matplotlib.pyplot as plt
 
 def percent_correct(actual, predicted):
     return 100 * np.mean(actual == predicted)
+
+######################################################################
+
+def batched_use(nnet, Xset, size=100):
+    correct = []
+    for i in range(0, len(Xset), size):
+        correct.extend(nnet.use(Xset[i : i+size, :])[0].flatten())
+    return np.array(correct).reshape(-1, 1)
 
 ######################################################################
 
