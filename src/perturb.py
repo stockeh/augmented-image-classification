@@ -353,7 +353,7 @@ def augmented_training(Xtrain, Ttrain, Xtest, Ttest, model='MNIST', type='pixel'
 
                     Mtrain = change_pixel(Xtrain, pixels_to_change=pixels+1, pertrub=perturb)
 
-                    if model = 'MNIST':
+                    if model == 'MNIST':
                         nnet = train_mnist(Mtrain, Ttrain)
                     else:
                         nnet = train_cifar(Mtrain, Ttrain)
