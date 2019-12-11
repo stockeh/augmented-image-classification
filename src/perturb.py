@@ -21,6 +21,8 @@ from ipywidgets import FloatProgress
 
 COLORS = pl.cm.Set2(np.linspace(0, 1, 8))
 
+######################################################################
+
 def change_pixel(Xset, pixels_to_change=1, pertrub='stuck'):
     Xcopy  = copy.copy(Xset)
     bounds = Xcopy.shape[-1]
@@ -49,11 +51,15 @@ def change_pixel(Xset, pixels_to_change=1, pertrub='stuck'):
 
     return Xcopy
 
+######################################################################
+
 def add_image_noise(Xset, variance=0.01):
     Xcopy = copy.copy(Xset)
     noise = np.random.normal(0, variance, Xcopy.shape)
     Xcopy += noise
     return np.clip(Xcopy, 0, 1)
+
+######################################################################
 
 def imshow(nnet, Xset, Xcopy, Tset, same_index, model,
            display='single', name='grid.pdf'):
@@ -95,6 +101,8 @@ def imshow(nnet, Xset, Xcopy, Tset, same_index, model,
     plt.savefig(name, bbox_inches='tight')
     plt.show();
 
+######################################################################
+
 def classified_diff(nnet, Xset, Xcopy, Tset):
 
     try:
@@ -109,6 +117,8 @@ def classified_diff(nnet, Xset, Xcopy, Tset):
                   and Xset_classes[i] != Xcopy_classes[i] ]
 
     return diff_index, 100 - ml.percent_correct(Xset_classes, Xcopy_classes)
+
+######################################################################
 
 def avg_model_change_in_pixels(nnet_struct, Xtrain, Ttrain, Xtest, Ttest, n_models=3,
                                end_pixel_val=5, trials_per_pixel=10, name='img.pdf'):
@@ -199,6 +209,8 @@ def avg_model_change_in_pixels(nnet_struct, Xtrain, Ttrain, Xtest, Ttest, n_mode
     plt.savefig(name, bbox_inches='tight')
     plt.show();
 
+######################################################################
+
 def change_in_pixels_plot(nnet, Xset, Tset, end_pixel_val=10, trials_per_pixel=5, name='img.pdf'):
 
     perturbs = ['stuck', 'dead', 'hot']
@@ -249,25 +261,105 @@ def change_in_pixels_plot(nnet, Xset, Tset, end_pixel_val=10, trials_per_pixel=5
     plt.savefig(name, bbox_inches='tight')
     plt.show();
 
-def test_increasing_noise(nnet, Xset, Tset, var_range=(0.001, 0.05), num_steps=5, trials_per_step=5):
+######################################################################
+
+def test_increasing_noise(nnet, Xset, Tset, var_range=(0.001, 0.05), num_steps=5,
+                          trials_per_step=5, name='img.pdf'):
     change = []
 
     f = FloatProgress(min=0, max=(num_steps * trials_per_step))
     display(f)
 
     for var_step in np.linspace(var_range[0], var_range[1], num_steps):
-        percent_diff_arr = []
+        accuracy = []
         for trial in range(trials_per_step):
             Xcopy = add_image_noise(Xset, var_step)
-            percent_diff_arr.append(classified_diff(nnet, Xset, Xcopy, Tset)[1])
+            try:
+                percent = ml.percent_correct(nnet.use(Xcopy)[0], Tset)
+            except:
+                percent = ml.percent_correct(ml.batched_use(nnet, Xcopy), Tset)
 
+            accuracy.append(percent)
             f.value += 1
 
-        change.append(percent_diff_arr)
+        change.append(accuracy)
 
     change = np.array(change)
 
     x = np.linspace(var_range[0], var_range[1], num_steps)
     y = np.mean(change, axis=1)
     yerr = np.std(change, axis=1)
-    return (x, y, yerr)
+
+    plt.errorbar(x, y, yerr=yerr, marker='.', lw=1, capsize=5, capthick=1.5,
+                 markeredgecolor='k', color=COLORS[0])
+
+    try:
+        natural_per = ml.percent_correct(nnet.use(Xset)[0], Tset)
+    except:
+        natural_per = ml.percent_correct(ml.batched_use(nnet, Xset), Tset)
+
+    plt.hlines(natural_per, var_range[0], var_range[1], label=f'natural',
+               linestyle='dashed', alpha=0.3)
+
+    plt.xticks(np.linspace(var_range[0], var_range[1], num_steps))
+    plt.xlabel('Number of Pixels Changed')
+    plt.ylabel('Accuracy ( \% )')
+    plt.legend(loc='best', fontsize='large')
+    plt.grid(True); plt.tight_layout();
+    plt.savefig(name, bbox_inches='tight')
+    plt.show();
+
+######################################################################
+
+def train_mnist(Xtrain, Ttrain, verbose=False):
+    nnet = nnc.NeuralNetwork_Convolutional(n_channels_in_image=Xtrain.shape[1],
+                                           image_size=Xtrain.shape[2],
+                                           n_units_in_conv_layers=[10],
+                                           kernels_size_and_stride=[(7, 3)],
+                                           max_pooling_kernels_and_stride=[(2, 2)],
+                                           n_units_in_fc_hidden_layers=[],
+                                           classes=np.unique(Ttrain), use_gpu=True, random_seed=12)
+
+    nnet.train(Xtrain, Ttrain, n_epochs=50, batch_size=1500,
+               optim='Adam', learning_rate=0.05, verbose=verbose)
+
+    return nnet
+
+def train_cifar(Xtrain, Ttrain, verbose=False):
+    nnet = nnc.NeuralNetwork_Convolutional(n_channels_in_image=Xtrain.shape[1],
+                               image_size=Xtrain.shape[2],
+                               n_units_in_conv_layers=[64, 64, 128, 128, 256, 256, 512, 512],
+                               kernels_size_and_stride=[(3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1)],
+                               max_pooling_kernels_and_stride=[(), (2, 2), (), (2, 2), (), (2, 2), (), (2, 2)],
+                               n_units_in_fc_hidden_layers=[],
+                               classes=np.unique(Ttrain), use_gpu=True, random_seed=12)
+
+    nnet.train(Xtrain, Ttrain, n_epochs=20, batch_size=100,
+               optim='Adam', learning_rate=0.0005, verbose=verbose)
+
+    return nnet
+
+######################################################################
+
+def augmented_training(Xtrain, Ttrain, Xtest, Ttest, model='MNIST', type='pixel'):
+
+    if type == 'pixel':
+
+            perturbs = ['stuck', 'dead', 'hot']
+
+            for i, perturb in enumerate(perturbs):
+
+                for pixels in [1, 5, 10]:
+
+                    Mtrain = change_pixel(Xtrain, pixels_to_change=pixels+1, pertrub=perturb)
+
+                    if model = 'MNIST':
+                        nnet = train_mnist(Mtrain, Ttrain)
+                    else:
+                        nnet = train_cifar(Mtrain, Ttrain)
+
+    elif type == 'noise':
+        pass
+
+    else:
+        raise Exception('\'type\' not defined.')

@@ -256,7 +256,6 @@ class NeuralNetwork_Convolutional():
 
         except:
             X = X.cpu()
-            Y = Y.cpu()
             raise Exception('CUDA out of memory, pass less items for X to use.')
 
         return Yclasses, self._softmax(Y)
