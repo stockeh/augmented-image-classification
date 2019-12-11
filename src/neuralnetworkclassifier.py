@@ -225,7 +225,7 @@ class NeuralNetwork_Convolutional():
             self.use_gpu = False
 
     def cuda(self):
-        if not torch.cuda.is_available():
+        if torch.cuda.is_available():
             self.nnet.cuda()
             self.use_gpu = True
         else:
