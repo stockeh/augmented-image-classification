@@ -260,12 +260,21 @@ class NeuralNetwork_Convolutional():
 
         return Yclasses, self._softmax(Y)
 
-    def transfer_learn_setup(self, additional_layers, freeze=True):
+    def transfer_learn_setup(self, additional_fc_layers, freeze=True, overwrite_network=True):
         if freeze:
             for p in self.nnet.parameters():
                 p.requires_grad = False
-        all_layers = list(self.nnet)[:-1] + additional_layers
+
+        n_units_previous = self.nnet[-1].in_features
+
+        all_layers = list(self.nnet)[:-1]
+        for n_units in additional_fc_layers:
+            all_layers.extend([torch.nn.Linear(n_units_previous, n_units), torch.nn.ReLU()])
+            n_units_previous = n_units
+        all_layers.append(torch.nn.Linear(n_units_previous, self.n_outputs))
         new_network = torch.nn.Sequential(*all_layers)
         if self.use_gpu:
             new_network.cuda()
+        if overwrite_network:
+            self.nnet = new_network
         return new_network
