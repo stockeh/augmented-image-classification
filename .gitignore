@@ -2,14 +2,7 @@
 *.gz
 mnist.pkl.gz*
 notebooks/cifar-10-python.tar.gz
-notebooks/cifar-10-batches-py/test_batch
-notebooks/cifar-10-batches-py/readme.html
-notebooks/cifar-10-batches-py/data_batch_5
-notebooks/cifar-10-batches-py/data_batch_4
-notebooks/cifar-10-batches-py/data_batch_3
-notebooks/cifar-10-batches-py/data_batch_2
-notebooks/cifar-10-batches-py/data_batch_1
-notebooks/cifar-10-batches-py/batches.meta
+notebooks/cifar-10-batches-py/*
 
 # Augmented datasets
 notebooks/new-cifar
@@ -24,3 +17,6 @@ src/training-out.csv
 # Jupyter Defaults
 .ipynb_checkpoints
 __pycache__
+
+# Trained models (and other pickled objects)
+*.pkl

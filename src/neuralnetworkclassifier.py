@@ -225,7 +225,7 @@ class NeuralNetwork_Convolutional():
             self.use_gpu = False
 
     def cuda(self):
-        if not torch.cuda.is_available():
+        if torch.cuda.is_available():
             self.nnet.cuda()
             self.use_gpu = True
         else:
@@ -259,3 +259,22 @@ class NeuralNetwork_Convolutional():
             raise Exception('CUDA out of memory, pass less items for X to use.')
 
         return Yclasses, self._softmax(Y)
+
+    def transfer_learn_setup(self, additional_fc_layers, freeze=True, overwrite_network=True):
+        if freeze:
+            for p in self.nnet.parameters():
+                p.requires_grad = False
+
+        n_units_previous = self.nnet[-1].in_features
+
+        all_layers = list(self.nnet)[:-1]
+        for n_units in additional_fc_layers:
+            all_layers.extend([torch.nn.Linear(n_units_previous, n_units), torch.nn.ReLU()])
+            n_units_previous = n_units
+        all_layers.append(torch.nn.Linear(n_units_previous, self.n_outputs))
+        new_network = torch.nn.Sequential(*all_layers)
+        if self.use_gpu:
+            new_network.cuda()
+        if overwrite_network:
+            self.nnet = new_network
+        return new_network
