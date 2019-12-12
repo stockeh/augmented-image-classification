@@ -175,8 +175,8 @@ def change_in_pixels_plot(nnet, Xset, Tset, end_pixel_val=10, trials_per_pixel=5
 
 ######################################################################
 
-def test_increasing_noise(nnet, Xset, Tset, var_range=(0.001, 0.05), num_steps=5,
-                          trials_per_step=5, name='img.pdf'):
+def run_increasing_noise(nnet, Xset, Tset, var_range=(0.001, 0.05),
+        num_steps=5, trials_per_step=5):
     change = []
 
     f = FloatProgress(min=0, max=(num_steps * trials_per_step))
@@ -189,7 +189,7 @@ def test_increasing_noise(nnet, Xset, Tset, var_range=(0.001, 0.05), num_steps=5
             try:
                 percent = ml.percent_correct(nnet.use(Xcopy)[0], Tset)
             except:
-                percent = ml.percent_correct(ml.batched_use(nnet, Xcopy), Tset)
+                percent = ml.percent_correct(ml.batched_use(nnet, Xcopy, 100), Tset)
 
             accuracy.append(percent)
             f.value += 1
@@ -202,15 +202,18 @@ def test_increasing_noise(nnet, Xset, Tset, var_range=(0.001, 0.05), num_steps=5
     y = np.mean(change, axis=1)
     yerr = np.std(change, axis=1)
 
-    plt.errorbar(x, y, yerr=yerr, marker='.', lw=1, capsize=5, capthick=1.5,
-                 markeredgecolor='k', color=COLORS[0])
+    return (x, y, yerr)
 
-    try:
-        natural_per = ml.percent_correct(nnet.use(Xset)[0], Tset)
-    except:
-        natural_per = ml.percent_correct(ml.batched_use(nnet, Xset), Tset)
+def plot_increasing_noise(natural_pct, res_list, var_range, num_steps, name):
+    if type(res_list) is not list:
+        res_list = [res_list]
+    for i, named_result in enumerate(res_list):
+        l = named_result[0]
+        results = named_result[1]
+        plt.errorbar(results[0], results[1], yerr=results[2], marker='.', lw=1,
+                capsize=5, capthick=1.5, markeredgecolor='k', color=COLORS[i], label=l)
 
-    plt.hlines(natural_per, var_range[0], var_range[1], label=f'natural',
+    plt.hlines(natural_pct, var_range[0], var_range[1], label=f'natural',
                linestyle='dashed', alpha=0.3)
 
     plt.xticks(np.linspace(var_range[0], var_range[1], num_steps))
@@ -220,6 +223,19 @@ def test_increasing_noise(nnet, Xset, Tset, var_range=(0.001, 0.05), num_steps=5
     plt.grid(True); plt.tight_layout();
     plt.savefig(name, bbox_inches='tight')
     plt.show();
+
+
+def test_increasing_noise(nnet, Xset, Tset, var_range=(0.001, 0.05), num_steps=5,
+                          trials_per_step=5, name='img.pdf', model_name='Augmented Model'):
+    noise_results = run_increasing_noise(nnet, Xset, Tset, var_range, num_steps, trials_per_step)
+
+    try:
+        natural_per = ml.percent_correct(nnet.use(Xset)[0], Tset)
+    except:
+        natural_per = ml.percent_correct(ml.batched_use(nnet, Xset, 100), Tset)
+    plot_increasing_noise(natural_per, (model_name, noise_results), var_range,
+            num_steps, trials_per_step, name)
+
 
 ######################################################################
 
