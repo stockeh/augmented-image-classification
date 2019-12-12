@@ -234,7 +234,7 @@ def test_increasing_noise(nnet, Xset, Tset, var_range=(0.001, 0.05), num_steps=5
     except:
         natural_per = ml.percent_correct(ml.batched_use(nnet, Xset, 100), Tset)
     plot_increasing_noise(natural_per, (model_name, noise_results), var_range,
-            num_steps, trials_per_step, name)
+            num_steps, name)
 
 
 ######################################################################
