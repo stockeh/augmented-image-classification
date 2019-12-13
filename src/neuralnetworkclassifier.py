@@ -216,6 +216,82 @@ class NeuralNetwork_Convolutional():
 
         self.training_time = time.time() - start_time
 
+    def train_incremental(self, X, T, M, n_epochs, batch_size, optim='Adam', learning_rate=0.01, verbose=False):
+        
+        start_time = time.time()
+
+        self.n_epochs = n_epochs
+        self.batch_size = batch_size
+        self.learning_rate = learning_rate
+
+        if T.ndim == 1:
+            T = T.reshape((-1, 1))
+
+        _, T = np.where(T == self.classes)  # convert to labels from 0
+
+        self._setup_standardize(X, T)
+        M = self._standardizeX(M)
+        X = self._standardizeX(X)
+
+        M = torch.tensor(M)
+        X = torch.tensor(X)
+        T = torch.tensor(T.reshape(-1))
+        if self.use_gpu:
+            M = M.cuda()
+            X = X.cuda()
+            T = T.cuda()
+
+        loss = torch.nn.CrossEntropyLoss()
+
+        if optim == 'Adam':
+            optimizer = torch.optim.Adam(self.nnet.parameters(), lr=learning_rate,
+                                         betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+        elif optim == 'SGD':
+            optimizer = torch.optim.SGD(self.nnet.parameters(), lr=learning_rate,
+                                        momentum=0, dampening=0, weight_decay=0, nesterov=False)
+        else:
+            raise Exception('Only \'Adam\' and \'SGD\' are supported optimizers.')
+
+        n_examples = X.shape[0]
+        num_batches = n_examples // batch_size
+
+        print_every = n_epochs // 10 if n_epochs > 9 else 1
+        for epoch in range(n_epochs):
+
+            numDirty = int((epoch/n_epochs) * batch_size) #0
+
+            for k in range(num_batches):
+                start, end = k * batch_size, (k + 1) * batch_size
+
+                Tbatch =  T[start:end, ...]
+
+                mStart = end - numDirty
+                mEnd   = end
+                end    = mStart
+
+                Xbatch = torch.cat( [ X[start:end, ...], M[mStart:mEnd, ...] ] )
+
+                optimizer.zero_grad()
+
+                Y = self.nnet(Xbatch)
+                error = loss(Y, Tbatch)
+                self.error_trace.append(error)
+
+                error.backward()
+
+                optimizer.step()
+
+            if verbose and (epoch + 1) % print_every == 0:
+                print(f'Epoch {epoch + 1} error {error:.5f} clean {batch_size-numDirty} dirty {numDirty}')
+
+        if self.use_gpu:
+            M = M.cpu()
+            X = X.cpu()
+            T = T.cpu()
+
+        self.training_time = time.time() - start_time
+
+
     def get_error_trace(self):
         return self.error_trace
 
