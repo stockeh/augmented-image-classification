@@ -69,7 +69,9 @@ def augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='pixel', model='MNIST'
                     nnet = per.train_incremental_mnist(Xtrain, Ttrain, Mtrain)
 
                 elif(technique == 'transfer'):
-                    nnet = per.train_cifar(Mtrain, Ttrain)
+                    nnet = nnc.NeuralNetwork_Convolutional.load_network('../notebooks/pretrained_mnist_clean.pkl')
+                    nnet.transfer_learn_setup([256], freeze=False)
+                    nnet.train(Mtrain, Ttrain, n_epochs=20, batch_size=200, optim='Adam', learning_rate=0.0005, verbose=True)
 
                 else:
                     nnet = per.train_mnist(Mtrain, Ttrain)
@@ -78,7 +80,9 @@ def augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='pixel', model='MNIST'
                     nnet = per.train_incremental_cifar(Xtrain, Ttrain, Mtrain)
 
                 elif(technique == 'transfer'):
-                    nnet = per.train_cifar(Mtrain, Ttrain)
+                    nnet = nnc.NeuralNetwork_Convolutional.load_network('../notebooks/pretrained_cifar_clean.pkl')
+                    nnet.transfer_learn_setup([256, 512], freeze=False)
+                    nnet.train(Mtrain, Ttrain, n_epochs=5, batch_size=200, optim='Adam', learning_rate=0.0005, verbose=True)
 
                 else:
                     nnet = per.train_cifar(Mtrain, Ttrain)
@@ -130,14 +134,16 @@ def augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='pixel', model='MNIST'
 if __name__ == '__main__':
 
     print('Loading MNIST data', flush=True)
-    Xtrain, Ttrain, Xtest, Ttest, _, _ = dm.load_mnist('../notebooks/mnist.pkl.gz')
+    # Xtrain, Ttrain, Xtest, Ttest, _, _ = dm.load_mnist('../notebooks/mnist.pkl.gz')
     print('Done loading MNIST data', flush=True)
 
     #augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='pixel', model='MNIST', technique='constant')
     #augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='noise', model='MNIST', technique='constant')
 
     #augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='pixel', model='MNIST', technique='incremental')
-    augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='noise', model='MNIST', technique='incremental')
+
+    # augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='pixel', model='MNIST', technique='transfer')
+    # augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='noise', model='MNIST', technique='transfer')
 
     print('Loading CIFAR data', flush=True)
     Xtrain, Ttrain = dm.load_cifar_10('../notebooks/cifar-10-batches-py/data_batch_*')
@@ -149,5 +155,8 @@ if __name__ == '__main__':
 
     #augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='pixel', model='CIFAR', technique='incremental')
     #augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='noise', model='CIFAR', technique='incremental')
+
+    augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='pixel', model='CIFAR', technique='transfer')
+    augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='noise', model='CIFAR', technique='transfer')
 
     print('Finished Trial', flush=True)
