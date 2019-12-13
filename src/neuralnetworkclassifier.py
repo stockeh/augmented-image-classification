@@ -33,6 +33,7 @@ class NeuralNetwork_Convolutional():
             torch.backends.cudnn.benchmark = False
             torch.backends.cudnn.deterministic = True
 
+        self.random_seed = random_seed
         self.n_channels_in_image = n_channels_in_image
         self.image_size = image_size
         self.n_units_in_conv_layers = n_units_in_conv_layers
@@ -146,12 +147,11 @@ class NeuralNetwork_Convolutional():
         return self.Xstds * Xs + self.Xmeans
 
     def _setup_standardize(self, X, T):
-        if self.Xmeans is None:
-            self.Xmeans = X.mean(axis=0)
-            self.Xstds = X.std(axis=0)
-            self.Xconstant = self.Xstds == 0
-            self.XstdsFixed = copy.copy(self.Xstds)
-            self.XstdsFixed[self.Xconstant] = 1
+        self.Xmeans = X.mean(axis=0)
+        self.Xstds = X.std(axis=0)
+        self.Xconstant = self.Xstds == 0
+        self.XstdsFixed = copy.copy(self.Xstds)
+        self.XstdsFixed[self.Xconstant] = 1
 
     def train(self, X, T, n_epochs, batch_size, optim='Adam', learning_rate=0.01, verbose=False):
 
@@ -278,3 +278,26 @@ class NeuralNetwork_Convolutional():
         if overwrite_network:
             self.nnet = new_network
         return new_network
+
+    def _get_ctor_params(self):
+        return [self.n_channels_in_image, self.image_size,
+                self.n_units_in_conv_layers, self.kernels_size_and_stride,
+                self.max_pooling_kernels_and_stride,
+                self.n_units_in_fc_hidden_layers, self.classes.tolist(),
+                self.use_gpu, self.random_seed]
+
+    def save_network(self, save_path):
+        with open(save_path, 'wb') as f:
+            std_params = [self.Xmeans, self.Xstds, self.Xconstant, self.XstdsFixed]
+            torch.save((self._get_ctor_params(), std_params, self.nnet.state_dict()), f)
+
+    def load_network(load_path):
+        with open(load_path, 'rb') as f:
+            load_items = torch.load(f)
+        nnet = NeuralNetwork_Convolutional(*load_items[0])
+        nnet.Xmeans = load_items[1][0]
+        nnet.Xstds = load_items[1][1]
+        nnet.Xconstant = load_items[1][2]
+        nnet.XstdsFixed = load_items[1][3]
+        nnet.nnet.load_state_dict(load_items[2])
+        return nnet
