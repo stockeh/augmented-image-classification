@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import matplotlib.pylab as pl
 
 from matplotlib import rc
-rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
+rc('font',**{'family':'sans-serif','sans-serif':['Helvetica'], 'size':13})
 rc('text', usetex=True)
 plt.style.use('seaborn-whitegrid')
 
@@ -125,7 +125,7 @@ def augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='pixel', model='MNIST'
         plt.xticks(training_vals)
         plt.xlabel(xlabel)
         plt.ylabel('Accuracy ( \% )')
-        plt.legend(loc='best', fontsize='large')
+        plt.legend(loc='best', fontsize='medium')
         plt.grid(True); plt.tight_layout();
         plt.savefig('../notebooks/media/'+ technique +'/' + model.lower() + '-' + type
                     + '-' + perturb + '.pdf', bbox_inches='tight')
