@@ -35,7 +35,7 @@ def augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='pixel', model='MNIST'
         test_types = [0.02550, 0.03775, 0.05000]
         xlabel = 'Training Variance of Noise'
 
-    trials = 1
+    trials = 25
 
     f = FloatProgress(min=0, max=(len(perturbs) * len(training_vals) * (trials * len(test_types))))
     display(f)
@@ -134,7 +134,7 @@ def augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='pixel', model='MNIST'
 if __name__ == '__main__':
 
     print('Loading MNIST data', flush=True)
-    # Xtrain, Ttrain, Xtest, Ttest, _, _ = dm.load_mnist('../notebooks/mnist.pkl.gz')
+    Xtrain, Ttrain, Xtest, Ttest, _, _ = dm.load_mnist('../notebooks/mnist.pkl.gz')
     print('Done loading MNIST data', flush=True)
 
     #augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='pixel', model='MNIST', technique='constant')
@@ -142,8 +142,8 @@ if __name__ == '__main__':
 
     #augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='pixel', model='MNIST', technique='incremental')
 
-    # augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='pixel', model='MNIST', technique='transfer')
-    # augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='noise', model='MNIST', technique='transfer')
+    augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='pixel', model='MNIST', technique='transfer')
+    augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='noise', model='MNIST', technique='transfer')
 
     print('Loading CIFAR data', flush=True)
     Xtrain, Ttrain = dm.load_cifar_10('../notebooks/cifar-10-batches-py/data_batch_*')
