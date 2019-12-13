@@ -189,7 +189,7 @@ def run_increasing_noise(nnet, Xset, Tset, var_range=(0.001, 0.05),
             try:
                 percent = ml.percent_correct(nnet.use(Xcopy)[0], Tset)
             except:
-                percent = ml.percent_correct(ml.batched_use(nnet, Xcopy, 100), Tset)
+                percent = ml.percent_correct(ml.batched_use(nnet, Xcopy, 1000), Tset)
 
             accuracy.append(percent)
             f.value += 1
@@ -234,7 +234,7 @@ def test_increasing_noise(nnet, Xset, Tset, var_range=(0.001, 0.05), num_steps=5
     except:
         natural_per = ml.percent_correct(ml.batched_use(nnet, Xset, 100), Tset)
     plot_increasing_noise(natural_per, (model_name, noise_results), var_range,
-            num_steps, trials_per_step, name)
+            num_steps, name)
 
 
 ######################################################################
@@ -266,5 +266,34 @@ def train_cifar(Xtrain, Ttrain, verbose=False, random_seed=12):
                optim='Adam', learning_rate=0.0005, verbose=verbose)
 
     return nnet
+
+def train_incremental_mnist(Xtrain, Ttrain, Mtrain, verbose=False):
+    nnet = nnc.NeuralNetwork_Convolutional(n_channels_in_image=Xtrain.shape[1],
+                                           image_size=Xtrain.shape[2],
+                                           n_units_in_conv_layers=[10],
+                                           kernels_size_and_stride=[(7, 3)],
+                                           max_pooling_kernels_and_stride=[(2, 2)],
+                                           n_units_in_fc_hidden_layers=[],
+                                           classes=np.unique(Ttrain), use_gpu=True, random_seed=12)
+
+    nnet.train_incremental(Xtrain, Ttrain, Mtrain, n_epochs=50, batch_size=1500,
+               optim='Adam', learning_rate=0.05, verbose=verbose)
+
+    return nnet
+
+def train_incremental_cifar(Xtrain, Ttrain, Mtrain, verbose=False):
+    nnet = nnc.NeuralNetwork_Convolutional(n_channels_in_image=Xtrain.shape[1],
+                               image_size=Xtrain.shape[2],
+                               n_units_in_conv_layers=[64, 64, 128, 128, 256, 256, 512, 512],
+                               kernels_size_and_stride=[(3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1), (3, 1, 1)],
+                               max_pooling_kernels_and_stride=[(), (2, 2), (), (2, 2), (), (2, 2), (), (2, 2)],
+                               n_units_in_fc_hidden_layers=[],
+                               classes=np.unique(Ttrain), use_gpu=True, random_seed=12)
+
+    nnet.train_incremental(Xtrain, Ttrain, Mtrain, n_epochs=20, batch_size=100,
+               optim='Adam', learning_rate=0.0005, verbose=verbose)
+
+    return nnet
+
 
 ######################################################################
