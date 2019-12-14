@@ -8,7 +8,7 @@
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    inkscape:version="1.0beta2 (2b71d25, 2019-12-03)"
-   sodipodi:docname="cifar.svg"
+   sodipodi:docname="cifar-diagram.svg"
    id="svg550"
    version="1.1"
    style="background-color: rgb(255, 255, 255);"
@@ -33,9 +33,9 @@
      inkscape:window-maximized="0"
      inkscape:window-y="23"
      inkscape:window-x="0"
-     inkscape:cy="462.68174"
-     inkscape:cx="967.57269"
-     inkscape:zoom="1.2890038"
+     inkscape:cy="480.67467"
+     inkscape:cx="1342.5796"
+     inkscape:zoom="3.6458533"
      showgrid="false"
      id="namedview552"
      inkscape:window-height="956"
@@ -48,7 +48,8 @@
      borderopacity="1"
      inkscape:document-rotation="0"
      bordercolor="#666666"
-     pagecolor="#ffffff" />
+     pagecolor="#ffffff"
+     showguides="false" />
   <path
      id="path10"
      style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-linecap:round"
@@ -1645,4 +1646,15 @@
        x="405.78442"
        sodipodi:role="line"
        id="tspan1486-9-9-7-4-3-2-6-8-7">2</tspan></text>
+  <text
+     id="text570-6-4-7-5-5-8-7-7-0"
+     y="82.803223"
+     x="519.93054"
+     style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:8px;line-height:1.25;font-family:'Courier New';-inkscape-font-specification:'Courier New Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#000000;fill-opacity:1;stroke:none"
+     xml:space="preserve"><tspan
+       id="tspan670-5"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:8px;font-family:'Courier New';-inkscape-font-specification:'Courier New Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal"
+       y="82.803223"
+       x="519.93054"
+       sodipodi:role="line">10</tspan></text>
 </svg>
