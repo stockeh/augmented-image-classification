@@ -160,7 +160,7 @@ if __name__ == '__main__':
     #augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='pixel', model='MNIST', technique='incremental')
     #augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='noise', model='MNIST', technique='incremental')
 
-    #augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='blur', model='MNIST', technique='transfer')
+    # augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='blur', model='MNIST', technique='transfer')
     # augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='pixel', model='MNIST', technique='transfer')
     # augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='noise', model='MNIST', technique='transfer')
 
