@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import matplotlib.pylab as pl
 import neuralnetworkclassifier as nnc
+import scipy.ndimage as ndi
 import numpy as np
 import mlutils as ml
 import copy
@@ -56,6 +57,11 @@ def change_pixel(Xset, pixels_to_change=1, pertrub='stuck'):
 
 ######################################################################
 
+def add_image_blur(Xset, sigma=0.5):
+    return np.array([ ndi.gaussian_filter(m, sigma) for m in Xset ])
+
+######################################################################
+
 def add_image_noise(Xset, variance=0.01):
     Xcopy = copy.copy(Xset)
     noise = np.random.normal(0, variance, Xcopy.shape)
@@ -75,29 +81,30 @@ def imshow(nnet, Xset, Xcopy, Tset, same_index, model,
 
     else:
         plt.figure(figsize=(5, 4))
-        num  = 8
-        rows = 2
+        num  = 4
+        rows = 1
         cols = 4
 
     n_display = same_index[:num] if len(same_index) > num else same_index
-
+    print(f'displaying {n_display} items.')
     Xcopy_classes, _ = nnet.use(Xcopy[n_display])
     Xset_classes, _  = nnet.use(Xset[n_display])
 
     print(Xcopy.shape, Xset.shape)
-
+    CIFAR_classes = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
     for i, val in enumerate(n_display):
         plt.subplot(rows, cols, i + 1)
 
         if model == 'MNIST':
             plt.imshow(Xcopy[val, :].reshape(Xset.shape[-1], Xset.shape[-1]),
                        interpolation='nearest', cmap='binary')
+            plt.title('$X_i$: {0}\n$M_i$: {1}'.format(Xset_classes[i][0],
+                                                                   Xcopy_classes[i][0]))
         if model == 'CIFAR':
             plt.imshow(np.moveaxis(Xcopy[val,...], 0, 2), interpolation='nearest')
+            plt.title('$X_i$: {0}\n$M_i$: {1}'.format(CIFAR_classes[Xset_classes[i][0]],
+                                                                   CIFAR_classes[Xcopy_classes[i][0]]))
 
-        plt.title('$X_i$: {0}, $M_i$: {1},\n$T_i$: {2}'.format(Xset_classes[i][0],
-                                                               Xcopy_classes[i][0],
-                                                               Tset[val][0]))
         plt.axis('off');
 
     plt.tight_layout();
@@ -166,9 +173,11 @@ def change_in_pixels_plot(nnet, Xset, Tset, end_pixel_val=10, trials_per_pixel=5
 
     plt.hlines(natural_per, 1, change.shape[0], label=f'natural',
                linestyle='dashed', alpha=0.3)
+
+    plt.xticks(np.arange(1, end_pixel_val + 1))
     plt.xlabel('Number of Pixels Changed')
     plt.ylabel('Accuracy ( \% )')
-    plt.legend(loc='best', fontsize='large')
+    plt.legend(loc='best', fontsize='medium')
     plt.grid(True); plt.tight_layout();
     plt.savefig(name, bbox_inches='tight')
     plt.show();
@@ -219,7 +228,57 @@ def plot_increasing_noise(natural_pct, res_list, var_range, num_steps, name):
     plt.xticks(np.linspace(var_range[0], var_range[1], num_steps))
     plt.xlabel('Variance of Noise')
     plt.ylabel('Accuracy ( \% )')
-    plt.legend(loc='best', fontsize='large')
+    plt.legend(loc='best', fontsize='medium')
+    plt.grid(True); plt.tight_layout();
+    plt.savefig(name, bbox_inches='tight')
+    plt.show();
+
+######################################################################
+
+def test_increasing_blur(nnet, Xset, Tset, var_range=(0.2, 0.7), num_steps=5,
+                          trials_per_step=5, name='img.pdf'):
+    change = []
+
+    f = FloatProgress(min=0, max=(num_steps * trials_per_step))
+    display(f)
+
+    for var_step in np.linspace(var_range[0], var_range[1], num_steps):
+        accuracy = []
+        for trial in range(trials_per_step):
+            Xcopy = add_image_blur(Xset, var_step)
+            try:
+                percent = ml.percent_correct(nnet.use(Xcopy)[0], Tset)
+            except:
+                percent = ml.percent_correct(ml.batched_use(nnet, Xcopy), Tset)
+
+            accuracy.append(percent)
+            f.value += 1
+
+        change.append(accuracy)
+
+    change = np.array(change)
+
+    x = np.linspace(var_range[0], var_range[1], num_steps)
+    y = np.mean(change, axis=1)
+    yerr = np.std(change, axis=1)
+
+    plt.figure(figsize=(6, 4))
+
+    plt.errorbar(x, y, yerr=yerr, marker='.', lw=1, capsize=5, capthick=1.5,
+                 markeredgecolor='k', color=COLORS[0])
+
+    try:
+        natural_per = ml.percent_correct(nnet.use(Xset)[0], Tset)
+    except:
+        natural_per = ml.percent_correct(ml.batched_use(nnet, Xset), Tset)
+
+    plt.hlines(natural_per, var_range[0], var_range[1], label=f'natural',
+               linestyle='dashed', alpha=0.3)
+
+    plt.xticks(np.linspace(var_range[0], var_range[1], num_steps))
+    plt.xlabel('Standard deviation for Gaussian kernel')
+    plt.ylabel('Accuracy ( \% )')
+    plt.legend(loc='best', fontsize='medium')
     plt.grid(True); plt.tight_layout();
     plt.savefig(name, bbox_inches='tight')
     plt.show();
