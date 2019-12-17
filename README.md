@@ -1,4 +1,4 @@
-# Strategies for Robust Bust Image Classification
+# Strategies for Robust Image Classification
 
 *Abstract*&mdash;In this work we evaluate the impact of digitally altered images on the performance of artificial neural networks. We explore factors that negatively affect the ability of an image classification model to produce consistent and accurate results. A model’s ability to classify is negatively influenced by alterations to images as a result of digital abnormalities or changes in the physical environment. The focus of this paper is to discover and replicate scenarios that modify the appearance of an image and evaluate them on state-of-the-art machine learning models. Our contributions present various training techniques that enhance a model’s ability to generalize and improve robustness against these alterations.
 
