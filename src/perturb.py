@@ -4,6 +4,7 @@ import neuralnetworkclassifier as nnc
 import scipy.ndimage as ndi
 import numpy as np
 import mlutils as ml
+import pandas as pd
 import copy
 
 from IPython.display import display
@@ -127,7 +128,7 @@ def classified_diff(nnet, Xset, Xcopy, Tset):
                   and Xset_classes[i] != Xcopy_classes[i] ]
 
     return diff_index, 100 - ml.percent_correct(Xset_classes, Xcopy_classes)
-
+    
 ######################################################################
 
 def change_in_pixels_plot(nnet, Xset, Tset, end_pixel_val=10, trials_per_pixel=5, name='img.pdf'):
@@ -136,7 +137,7 @@ def change_in_pixels_plot(nnet, Xset, Tset, end_pixel_val=10, trials_per_pixel=5
 
     f = FloatProgress(min=0, max=(end_pixel_val * trials_per_pixel * len(perturbs)))
     display(f)
-
+    
     plt.figure(figsize=(6, 4))
 
     for i, perturb in enumerate(perturbs):
@@ -162,7 +163,7 @@ def change_in_pixels_plot(nnet, Xset, Tset, end_pixel_val=10, trials_per_pixel=5
         x = np.arange(1, change.shape[0] + 1)
         y = np.mean(change, axis=1)
         yerr = np.std(change, axis=1)
-
+        
         plt.errorbar(x, y, yerr=yerr, marker='.', lw=1, capsize=5, capthick=1.5,
                      markeredgecolor='k', label=f'{perturb}', color=COLORS[i])
 
@@ -356,3 +357,188 @@ def train_incremental_cifar(Xtrain, Ttrain, Mtrain, verbose=False):
 
 
 ######################################################################
+#
+#
+# DATA SPECIFIC
+#
+#
+######################################################################
+
+def change_in_pixels_data(nnet, Xset, Tset, end_pixel_val=10, trials_per_pixel=5, directory='data/', name='data'):
+
+    perturbs = ['stuck', 'dead', 'hot']
+
+    f = FloatProgress(min=0, max=(end_pixel_val * trials_per_pixel * len(perturbs)))
+    display(f)
+
+    for i, perturb in enumerate(perturbs):
+        filename = directory + name + '-' + perturb + '.csv'
+        change = []
+
+        for pixels in range(end_pixel_val):
+            accuracy = []
+            for trial in range(trials_per_pixel):
+                Xcopy = change_pixel(Xset, pixels_to_change=pixels+1, pertrub=perturb)
+                try:
+                    percent = ml.percent_correct(nnet.use(Xcopy)[0], Tset)
+                except:
+                    percent = ml.percent_correct(ml.batched_use(nnet, Xcopy), Tset)
+
+                accuracy.append(percent)
+                f.value += 1
+
+            change.append(accuracy)
+
+        pd.DataFrame(change).to_csv(filename, index=False)
+        
+    try:
+        natural_per = ml.percent_correct(nnet.use(Xset)[0], Tset)
+    except:
+        natural_per = ml.percent_correct(ml.batched_use(nnet, Xset), Tset)
+        
+    filename = directory + name + '.metadata'
+    with open(filename, 'w') as f:
+        print(f'natural: ml.percent_correct(nnet.use(Xset)[0], Tset) = {natural_per}', file=f)
+        
+######################################################################
+
+def plot_change_in_data(directory, names, key_name, natural):
+    from matplotlib import rc
+    
+    rc('font',**{'family':'sans-serif','sans-serif':['Helvetica'], 'size':10})
+    rc('text', usetex=True)
+    plt.style.use('seaborn-whitegrid')
+    
+    plt.figure(figsize=(3, 2), dpi=300)
+
+    markers = ['v', 's', 'o']
+    linestyle = ['--', '-.', ':']
+    for i, name in enumerate(names):
+        data = pd.read_csv(f'{directory}{key_name}-{name}.csv').to_numpy()
+        
+        x = np.arange(1, data.shape[0] + 1)
+        y = np.mean(data, axis=1)
+        yerr = np.std(data, axis=1)
+
+        plt.errorbar(x, y, yerr=yerr, marker=markers[i], ls=linestyle[i], ms=4,
+                     lw=1.5, capsize=5, capthick=1.5,
+                     markeredgecolor='k', label=f'{name}', color=COLORS[i])
+
+    plt.hlines(natural, 1, data.shape[0], label=f'natural',
+               linestyle='dashed', alpha=0.3)
+
+    plt.xticks(np.arange(1, data.shape[0] + 1))
+    plt.legend(loc='best', fontsize='small')
+    plt.grid(True); plt.tight_layout();
+    plt.savefig(f'{directory}{key_name}.pdf', bbox_inches='tight')
+    plt.show();
+
+    
+######################################################################
+
+def plot_change_in_data_desc(directory, names, key_name, var_range, 
+                              num_steps, natural):
+    from matplotlib import rc
+    
+    rc('font',**{'family':'sans-serif','sans-serif':['Helvetica'], 'size':10})
+    rc('text', usetex=True)
+    plt.style.use('seaborn-whitegrid')
+    
+    plt.figure(figsize=(3, 2), dpi=300)
+
+    markers = ['v', 's', 'o']
+    linestyle = ['--', '-.', ':']
+    for i, name in enumerate(names):
+        data = pd.read_csv(f'{directory}{key_name}-{name}.csv').to_numpy()
+        
+        x = np.linspace(var_range[0], var_range[1], num_steps)
+        y = np.mean(data, axis=1)
+        yerr = np.std(data, axis=1)
+
+        plt.errorbar(x, y, yerr=yerr, marker=markers[i], ls=linestyle[i], ms=4,
+                     lw=1.5, capsize=5, capthick=1.5,
+                     markeredgecolor='k', label=f'{key_name}', color=COLORS[i])
+
+    plt.hlines(natural, var_range[0], var_range[1], label=f'natural',
+               linestyle='dashed', alpha=0.3)
+    
+    if key_name == 'noise':
+        rotation=15
+    else:
+        rotation=0
+    plt.xticks(np.linspace(var_range[0], var_range[1], num_steps), rotation=rotation)
+    plt.legend(loc='best', fontsize='small')
+    plt.grid(True); plt.tight_layout();
+    plt.savefig(f'{directory}{key_name}.pdf', bbox_inches='tight')
+    plt.show();
+    
+######################################################################
+
+def increasing_noise_data(nnet, Xset, Tset, var_range=(0.001, 0.05),
+        num_steps=5, trials_per_step=5, directory='data/', name='data'):
+    change = []
+
+    f = FloatProgress(min=0, max=(num_steps * trials_per_step))
+    display(f)
+
+    for var_step in np.linspace(var_range[0], var_range[1], num_steps):
+        filename = directory + name + '-' + str(var_step) + '.csv'
+        accuracy = []
+        for trial in range(trials_per_step):
+            Xcopy = add_image_noise(Xset, var_step)
+            try:
+                percent = ml.percent_correct(nnet.use(Xcopy)[0], Tset)
+            except:
+                percent = ml.percent_correct(ml.batched_use(nnet, Xcopy, 1000), Tset)
+
+            accuracy.append(percent)
+            f.value += 1
+
+        change.append(accuracy)
+
+    pd.DataFrame(change).to_csv(filename, index=False)
+
+    try:
+        natural_per = ml.percent_correct(nnet.use(Xset)[0], Tset)
+    except:
+        natural_per = ml.percent_correct(ml.batched_use(nnet, Xset), Tset)
+        
+    filename = directory + name + '.metadata'
+    with open(filename, 'w') as f:
+        print(f'natural: ml.percent_correct(nnet.use(Xset)[0], Tset) = {natural_per}', file=f)
+        
+######################################################################
+        
+def increasing_blur_data(nnet, Xset, Tset, var_range=(0.001, 0.05),
+        num_steps=5, trials_per_step=5, directory='data/', name='data'):
+    
+    change = []
+
+    f = FloatProgress(min=0, max=(num_steps * trials_per_step))
+    display(f)
+
+    for var_step in np.linspace(var_range[0], var_range[1], num_steps):
+        filename = directory + name + '-' + str(var_step) + '.csv'
+        accuracy = []
+        for trial in range(trials_per_step):
+            Xcopy = add_image_blur(Xset, var_step)
+            try:
+                percent = ml.percent_correct(nnet.use(Xcopy)[0], Tset)
+            except:
+                percent = ml.percent_correct(ml.batched_use(nnet, Xcopy), Tset)
+
+            accuracy.append(percent)
+            f.value += 1
+
+        change.append(accuracy)
+
+    pd.DataFrame(change).to_csv(filename, index=False)
+
+    try:
+        natural_per = ml.percent_correct(nnet.use(Xset)[0], Tset)
+    except:
+        natural_per = ml.percent_correct(ml.batched_use(nnet, Xset), Tset)
+        
+    filename = directory + name + '.metadata'
+    with open(filename, 'w') as f:
+        print(f'natural: ml.percent_correct(nnet.use(Xset)[0], Tset) = {natural_per}', file=f)

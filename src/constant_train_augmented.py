@@ -169,9 +169,9 @@ if __name__ == '__main__':
     Xtest, Ttest = dm.load_cifar_10('../notebooks/cifar-10-batches-py/test_batch')
     print('Done loading CIFAR data', flush=True)
 
-    augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='blur', model='CIFAR', technique='constant')
-    augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='pixel', model='CIFAR', technique='constant')
-    augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='noise', model='CIFAR', technique='constant')
+    #augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='blur', model='CIFAR', technique='constant')
+    #augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='pixel', model='CIFAR', technique='constant')
+    #augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='noise', model='CIFAR', technique='constant')
 
     #augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='blur', model='CIFAR', technique='incremental')
     #augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='pixel', model='CIFAR', technique='incremental')
