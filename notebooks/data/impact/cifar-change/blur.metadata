@@ -1,0 +1,1 @@
+natural: ml.percent_correct(nnet.use(Xset)[0], Tset) = 86.88

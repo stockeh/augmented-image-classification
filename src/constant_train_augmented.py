@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import matplotlib.pylab as pl
 
 from matplotlib import rc
-rc('font',**{'family':'sans-serif','sans-serif':['Helvetica'], 'size':13})
+rc('font',**{'family':'sans-serif','sans-serif':['Helvetica'], 'size':10})
 rc('text', usetex=True)
 plt.style.use('seaborn-whitegrid')
 
@@ -119,8 +119,10 @@ def augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='pixel', model='MNIST'
 
         print('finished testing: ', perturb, flush=True)
 
-        plt.figure(figsize=(6, 4))
-
+        plt.figure(figsize=(3, 2), dpi=300)
+        
+        markers = ['v', 's', 'o']
+        linestyle = ['--', '-.', ':']
         for t, test_perturb in enumerate(test_types):
 
             if type == 'pixel':
@@ -131,16 +133,14 @@ def augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='pixel', model='MNIST'
                 label=f'{test_perturb:.3f}'
 
             plt.errorbar(training_vals, augmented_acc[t, 0], yerr=augmented_acc[t, 1],
-                         marker='.', lw=1, capsize=5, capthick=1.5, label=label,
-                         markeredgecolor='k', color=COLORS[t])
+                         marker=markers[t], ls=linestyle[t], ms=4, lw=1.5, capsize=5, capthick=1.5, 
+                         label=label, markeredgecolor='k', color=COLORS[t])
 
-        plt.plot(training_vals, natural_acc, marker='.', lw=1, label=f'natural',
-                 markeredgecolor='k', color=COLORS[3])
+        plt.plot(training_vals, natural_acc, marker='>', ms=4, lw=1.5, label=f'natural',
+                 markeredgecolor='k', color='grey')
 
         plt.xticks(training_vals)
-        plt.xlabel(xlabel)
-        plt.ylabel('Accuracy ( \% )')
-        plt.legend(loc='best', fontsize='medium')
+        plt.legend(loc='best', fontsize='small')
         plt.grid(True); plt.tight_layout();
         plt.savefig('../notebooks/media/'+ technique +'/' + model.lower() + '-' + type
                     + '-' + perturb + '.pdf', bbox_inches='tight')
@@ -156,13 +156,13 @@ if __name__ == '__main__':
     augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='pixel', model='MNIST', technique='constant')
     augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='noise', model='MNIST', technique='constant')
 
-    #augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='blur', model='MNIST', technique='incremental')
-    #augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='pixel', model='MNIST', technique='incremental')
-    #augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='noise', model='MNIST', technique='incremental')
+    augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='blur', model='MNIST', technique='incremental')
+    augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='pixel', model='MNIST', technique='incremental')
+    augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='noise', model='MNIST', technique='incremental')
 
-    # augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='blur', model='MNIST', technique='transfer')
-    # augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='pixel', model='MNIST', technique='transfer')
-    # augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='noise', model='MNIST', technique='transfer')
+    augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='blur', model='MNIST', technique='transfer')
+    augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='pixel', model='MNIST', technique='transfer')
+    augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='noise', model='MNIST', technique='transfer')
 
     print('Loading CIFAR data', flush=True)
     Xtrain, Ttrain = dm.load_cifar_10('../notebooks/cifar-10-batches-py/data_batch_*')
@@ -173,12 +173,12 @@ if __name__ == '__main__':
     augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='pixel', model='CIFAR', technique='constant')
     augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='noise', model='CIFAR', technique='constant')
 
-    #augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='blur', model='CIFAR', technique='incremental')
-    #augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='pixel', model='CIFAR', technique='incremental')
-    #augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='noise', model='CIFAR', technique='incremental')
+    augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='blur', model='CIFAR', technique='incremental')
+    augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='pixel', model='CIFAR', technique='incremental')
+    augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='noise', model='CIFAR', technique='incremental')
 
-    # augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='blur', model='CIFAR', technique='transfer')
-    # augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='pixel', model='CIFAR', technique='transfer')
-    # augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='noise', model='CIFAR', technique='transfer')
+    augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='blur', model='CIFAR', technique='transfer')
+    augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='pixel', model='CIFAR', technique='transfer')
+    augmented_training(Xtrain, Ttrain, Xtest, Ttest, type='noise', model='CIFAR', technique='transfer')
 
     print('Finished Trial', flush=True)

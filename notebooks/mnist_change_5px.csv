@@ -1,0 +1,1 @@
+ml.percent_correct(nnet.use(Xset)[0], Tset) = 97.42 data/impact/mnist_change_5px.csvmetadata
